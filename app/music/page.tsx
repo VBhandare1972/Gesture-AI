@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useApp, TRACKS, HINDI_TRACKS, ENGLISH_TRACKS } from "@/context/AppContext";
 
 export default function MusicPage() {
@@ -38,14 +38,10 @@ export default function MusicPage() {
     } else {
       setMusicState((prev) => ({ ...prev, trackIndex: idx }));
     }
-    if (musicState.playing) {
-      setTimeout(() => playMusic(), 100);
-    }
-  };
-
-  const getStatusLabel = () => {
-    if (musicState.playing) return "NOW PLAYING";
-    return "PAUSED";
+    // Force trigger playback if selected
+    setTimeout(() => {
+      playMusic();
+    }, 100);
   };
 
   const activeTrackName = activeTracks[activeIdx]?.name || "None";
@@ -56,9 +52,10 @@ export default function MusicPage() {
 
   return (
     <section className="view active" id="view-music">
-      <div className="view-head">
+      {/* Header */}
+      <div className="view-head" style={{ marginBottom: "16px", flexShrink: 0 }}>
         <div>
-          <div className="eyebrow">
+          <div className="eyebrow" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M9 18V5l12-2v13" />
               <circle cx="6" cy="18" r="3" />
@@ -66,131 +63,137 @@ export default function MusicPage() {
             </svg>{" "}
             Module 03
           </div>
-          <h1 className="view-title">Music</h1>
+          <h1 className="view-title">Music Player</h1>
           <div className="view-sub">English hits or Hindi hits — voice or gesture controlled.</div>
         </div>
-      </div>
 
-      <div className={`panel music-panel brackets ${musicState.playing ? "playing" : ""}`} style={{ maxWidth: "480px", margin: "0 auto" }}>
-        <div className="music-tabs">
+        {/* Mode tabs in header right */}
+        <div className="music-tabs" style={{ display: "flex", gap: "6px", margin: 0 }}>
           <button
             className={`music-tab ${musicState.mode === "english" ? "active" : ""}`}
             onClick={() => switchMusicMode("english")}
+            style={{
+              padding: "6px 14px",
+              borderRadius: "8px",
+              border: "none",
+              background: musicState.mode === "english" ? "var(--red)" : "rgba(255,255,255,0.05)",
+              color: musicState.mode === "english" ? "#fff" : "var(--txt-mid)",
+              fontWeight: 600,
+              fontSize: "11px",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+            }}
           >
-            English Hits
+            🎵 English Hits
           </button>
           <button
             className={`music-tab ${musicState.mode === "hindi" ? "active" : ""}`}
             onClick={() => switchMusicMode("hindi")}
+            style={{
+              padding: "6px 14px",
+              borderRadius: "8px",
+              border: "none",
+              background: musicState.mode === "hindi" ? "var(--red)" : "rgba(255,255,255,0.05)",
+              color: musicState.mode === "hindi" ? "#fff" : "var(--txt-mid)",
+              fontWeight: 600,
+              fontSize: "11px",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+            }}
           >
-            Hindi Hits
+            🎶 Hindi Hits
           </button>
         </div>
+      </div>
 
-        <div className="music-sub" id="musicNowPlaying">
-          {getStatusLabel()}
-        </div>
-        <div className="music-track" id="musicTrackName">
-          {activeTrackName}
-        </div>
-        <div className="music-sub" id="musicTrackSub" style={{ fontSize: "11.5px", color: "var(--text-mid)", marginTop: "4px" }}>
-          {activeTrackSub}
-        </div>
-        <div className="music-sub" id="musicTrackTime">
-          {musicState.trackTime}
-        </div>
-
-        <div
-          className={`yt-frame-wrap ${musicState.playing ? "playing" : ""}`}
-          id="ytFrameWrap"
-          style={{ display: musicState.mode === "hindi" || musicState.mode === "english" ? "block" : "none" }}
-        >
-          <div id="ytPlayer"></div>
-        </div>
+      {/* Two-column layout */}
+      <div className="music-layout" style={{ flex: 1, minHeight: 0 }}>
         
-        {(musicState.mode === "hindi" || musicState.mode === "english") && (
-          <div className="yt-disclaimer mono" id="ytDisclaimer">
-            Streaming via YouTube
+        {/* LEFT PANEL — Track list (Narrower) */}
+        <div className="panel music-list-col" style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+            <span className="tool-label" style={{ fontSize: "10.5px", letterSpacing: "1.5px", margin: 0 }}>
+              TRACK LIST ({activeTracks.length})
+            </span>
+            <span style={{ fontSize: "10px", color: "var(--cream)" }} className="mono">
+              {musicState.playing ? "PLAYING" : "PAUSED"}
+            </span>
           </div>
-        )}
 
-        <div className="viz-wrap" id="vizWrap">
-          {vizHeights.map((h, i) => (
-            <div key={i} className="viz-bar" style={{ height: `${h}px` }}></div>
-          ))}
+          <div className="track-list" id="trackList" style={{ overflowY: "auto", flex: 1, paddingRight: "4px" }}>
+            {activeTracks.map((t, idx) => {
+              const sub =
+                musicState.mode === "hindi" || musicState.mode === "english"
+                  ? `${(t as any).artist}`
+                  : (t as any).sub;
+              const isActive = idx === activeIdx;
+              return (
+                <div
+                  key={idx}
+                  className={`track-row ${isActive ? "active" : ""}`}
+                  onClick={() => handleTrackSelect(idx)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    background: isActive ? "rgba(132, 42, 59, 0.25)" : "rgba(70, 18, 32, 0.15)",
+                    border: isActive ? "1px solid var(--peach)" : "1px solid rgba(254, 208, 187, 0.05)",
+                    marginBottom: "6px",
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  <span className="mono" style={{ fontSize: "11px", color: isActive ? "var(--cream)" : "var(--txt-faint)", width: "16px" }}>
+                    {isActive && musicState.playing ? "▶" : String(idx + 1).padStart(2, "0")}
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: "12.5px", fontWeight: isActive ? 700 : 500, color: isActive ? "#fff" : "var(--txt-mid)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {t.name}
+                    </div>
+                    <div style={{ fontSize: "10.5px", color: "var(--txt-faint)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {sub}
+                    </div>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="music-controls">
-          <button className="btn btn-icon btn-ghost" id="musicPrevBtn" onClick={prevTrack}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polygon points="19 20 9 12 19 4 19 20" />
-              <line x1="5" y1="19" x2="5" y2="5" />
-            </svg>
-          </button>
-          <button
-            className="btn btn-accent play-btn"
-            id="musicPlayBtn"
-            onClick={musicState.playing ? pauseMusic : playMusic}
+        {/* RIGHT PANEL — Video Player (Wider) */}
+        <div className={`panel music-player-col brackets ${musicState.playing ? "playing" : ""}`} style={{ height: "100%", overflowY: "auto" }}>
+          
+
+
+          <div style={{ marginBottom: "12px", textAlign: "left" }}>
+            <div className="music-track" style={{ fontSize: "22px", fontWeight: 700, margin: "0 0 2px" }}>
+              {activeTrackName}
+            </div>
+            <div className="music-sub" style={{ fontSize: "12px", color: "var(--txt-mid)" }}>
+              {activeTrackSub}
+            </div>
+          </div>
+
+          {/* YouTube Video Frame Container */}
+          <div
+            className="yt-frame-wrap"
+            id="ytFrameWrap"
+            style={{
+              display: musicState.mode === "hindi" || musicState.mode === "english" ? "block" : "none",
+              margin: "0 auto 16px",
+              width: "100%",
+              flexGrow: 1,
+              minHeight: "400px"
+            }}
           >
-            {musicState.playing ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <rect x="6" y="4" width="4" height="16" />
-                <rect x="14" y="4" width="4" height="16" />
-              </svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="5 3 19 12 5 21 5 3" />
-              </svg>
-            )}
-          </button>
-          <button className="btn btn-icon btn-ghost" id="musicNextBtn" onClick={nextTrack}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polygon points="5 4 15 12 5 20 5 4" />
-              <line x1="19" y1="5" x2="19" y2="19" />
-            </svg>
-          </button>
+            {/* Using a key to reset the DOM node structure properly and prevent React reconciliation errors */}
+            <div key={musicState.mode} id="ytPlayer"></div>
+          </div>
+
         </div>
 
-        <div className="vol-row">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-          </svg>
-          <input
-            type="range"
-            id="musicVolume"
-            min="0"
-            max="100"
-            value={musicState.volume}
-            onChange={(e) => setMusicVolume(Number(e.target.value))}
-          />
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-          </svg>
-        </div>
-
-        <div className="track-list" id="trackList">
-          {activeTracks.map((t, idx) => {
-            const sub =
-              musicState.mode === "hindi" || musicState.mode === "english"
-                ? `${(t as any).artist} · ${(t as any).movie}`
-                : (t as any).sub;
-            return (
-              <div
-                key={idx}
-                className={`track-row ${idx === activeIdx ? "active" : ""}`}
-                onClick={() => handleTrackSelect(idx)}
-              >
-                <span>
-                  {t.name}{" "}
-                  <span style={{ color: "var(--txt-faint)", fontSize: "10px" }}>— {sub}</span>
-                </span>
-                <span>{idx === activeIdx && musicState.playing ? "▶" : ""}</span>
-              </div>
-            );
-          })}
-        </div>
       </div>
     </section>
   );

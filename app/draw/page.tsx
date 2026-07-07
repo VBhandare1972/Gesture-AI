@@ -221,21 +221,49 @@ export default function DrawingPage() {
           ctx.strokeStyle = stroke.color;
           ctx.lineWidth = Math.max(3, stroke.size * 0.8);
           ctx.lineCap = "round";
+          ctx.beginPath();
           ctx.moveTo(cx - sSize * 0.7, cy);
           ctx.lineTo(cx + sSize * 0.7, cy);
           ctx.stroke();
+          const lineBB = sSize * 0.7;
           if (strokeIdx === selectedShapeIndexRef.current) {
-            ctx.strokeStyle = "rgba(254, 208, 187, 0.8)";
+            ctx.strokeStyle = "rgba(254, 208, 187, 0.75)";
             ctx.lineWidth = 1.5;
-            ctx.setLineDash([4, 4]);
-            ctx.strokeRect(cx - sSize * 0.7 - 6, cy - 14, sSize * 1.4 + 12, 28);
+            ctx.setLineDash([5, 4]);
+            ctx.strokeRect(cx - lineBB - 8, cy - 18, lineBB * 2 + 16, 36);
             ctx.setLineDash([]);
-            ctx.fillStyle = "#F5DAA7";
-            ctx.strokeStyle = "#842A3B";
-            ctx.lineWidth = 2;
+            const lrhx = cx + lineBB + 8; const lrhy = cy + 18; const lrhr = 12;
+            ctx.shadowColor = "#F5DAA7"; ctx.shadowBlur = 10;
+            ctx.fillStyle = "#C8973A"; ctx.strokeStyle = "#F5DAA7"; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.roundRect(lrhx - lrhr, lrhy - lrhr, lrhr * 2, lrhr * 2, 4);
+            ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
+            ctx.strokeStyle = "#1a0808"; ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.lineJoin = "round";
             ctx.beginPath();
-            ctx.arc(cx + sSize * 0.7 + 6, cy + 14, 8, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.moveTo(lrhx - 4, lrhy + 1); ctx.lineTo(lrhx + 4, lrhy + 1); ctx.lineTo(lrhx + 2, lrhy - 2);
+            ctx.moveTo(lrhx + 4, lrhy + 1); ctx.lineTo(lrhx + 2, lrhy + 4);
+            ctx.moveTo(lrhx + 1, lrhy - 4); ctx.lineTo(lrhx + 1, lrhy + 4);
+            ctx.stroke();
+            const lrotX = cx; const lrotY = cy - 36; const lrotR = 12;
+            ctx.shadowColor = "#00E5FF"; ctx.shadowBlur = 12;
+            ctx.fillStyle = "#007a8c"; ctx.strokeStyle = "#00E5FF"; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(lrotX, lrotY, lrotR, 0, Math.PI * 2);
+            ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
+            ctx.strokeStyle = "rgba(0,229,255,0.45)"; ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath(); ctx.moveTo(lrotX, lrotY + lrotR); ctx.lineTo(lrotX, cy - 18);
+            ctx.stroke(); ctx.setLineDash([]);
+            ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.lineCap = "round";
+            ctx.beginPath(); ctx.arc(lrotX, lrotY, 5, -Math.PI * 0.8, Math.PI * 0.7); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(lrotX + 4, lrotY + 2); ctx.lineTo(lrotX + 5, lrotY + 5); ctx.lineTo(lrotX + 2, lrotY + 4); ctx.stroke();
+            const ldhx = cx + lineBB + 8; const ldhy = cy - 18; const ldhr = 11;
+            ctx.shadowColor = "#FF4455"; ctx.shadowBlur = 12;
+            ctx.fillStyle = "rgba(190, 20, 35, 0.95)"; ctx.strokeStyle = "#FF4455"; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.roundRect(ldhx - ldhr, ldhy - ldhr, ldhr * 2, ldhr * 2, 4);
+            ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
+            ctx.strokeStyle = "#fff"; ctx.lineWidth = 2.5; ctx.lineCap = "round";
+            ctx.beginPath();
+            ctx.moveTo(ldhx - 5, ldhy - 5); ctx.lineTo(ldhx + 5, ldhy + 5);
+            ctx.moveTo(ldhx + 5, ldhy - 5); ctx.lineTo(ldhx - 5, ldhy + 5);
             ctx.stroke();
           }
           ctx.restore();
@@ -431,8 +459,11 @@ export default function DrawingPage() {
         const cx = selectedStroke.points[0].x;
         const cy = selectedStroke.points[0].y;
         const sSize = selectedStroke.size * 10;
-        const dhx = cx + sSize / 2 + 8;
-        const dhy = cy - sSize / 2 - 8;
+        const isLine = selectedStroke.shape === "Line";
+        const halfW = isLine ? sSize * 0.7 : sSize / 2;
+        const halfH = isLine ? 18 : sSize / 2;
+        const dhx = cx + halfW + 8;
+        const dhy = cy - halfH - 8;
         if (Math.abs(pos.x - dhx) < 18 && Math.abs(pos.y - dhy) < 18) {
           const idxToDel = selectedShapeIndexRef.current;
           setStrokes((prev) => prev.filter((_, i) => i !== idxToDel));
@@ -451,9 +482,9 @@ export default function DrawingPage() {
         const cx = selectedStroke.points[0].x;
         const cy = selectedStroke.points[0].y;
         const sSize = selectedStroke.size * 10;
-        const rotHandleX = cx;
-        const rotHandleY = cy - sSize / 2 - 22;
-        const distToRotHandle = Math.hypot(pos.x - rotHandleX, pos.y - rotHandleY);
+        // Line rotate handle is at cy-36, others at cy - sSize/2 - 22
+        const rotHandleY = selectedStroke.shape === "Line" ? cy - 36 : cy - sSize / 2 - 22;
+        const distToRotHandle = Math.hypot(pos.x - cx, pos.y - rotHandleY);
         if (distToRotHandle < 18) {
           rotatingShapeIndexRef.current = selectedShapeIndexRef.current;
           setIsRotating(true);
@@ -470,8 +501,9 @@ export default function DrawingPage() {
         const cx = selectedStroke.points[0].x;
         const cy = selectedStroke.points[0].y;
         const sSize = selectedStroke.size * 10;
-        const hx = cx + sSize / 2 + 8;
-        const hy = cy + sSize / 2 + 8;
+        const isLine = selectedStroke.shape === "Line";
+        const hx = isLine ? cx + sSize * 0.7 + 8 : cx + sSize / 2 + 8;
+        const hy = isLine ? cy + 18 : cy + sSize / 2 + 8;
         const distToHandle = Math.hypot(pos.x - hx, pos.y - hy);
         if (distToHandle < 18) {
           resizingShapeIndexRef.current = selectedShapeIndexRef.current;
@@ -736,13 +768,7 @@ export default function DrawingPage() {
     <section className="view active" id="view-draw">
       <div className="view-head">
         <div>
-          <div className="eyebrow">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 19l7-7 3 3-7 7-3-3z" />
-              <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
-            </svg>{" "}
-            Module 02
-          </div>
+          
           <h1 className="view-title">Air Drawing</h1>
           <div className="view-sub">Point your index finger and pinch to draw — or use mouse / touch.</div>
         </div>
