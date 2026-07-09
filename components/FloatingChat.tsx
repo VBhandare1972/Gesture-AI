@@ -18,7 +18,12 @@ export default function FloatingChat() {
   } = useApp();
 
   const [inputVal, setInputVal] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
   const chatLogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Auto-scroll chat log
   useEffect(() => {
@@ -64,6 +69,7 @@ export default function FloatingChat() {
         onClick={() => setChatOpen(!chatOpen)}
         title="AI Assistant"
         aria-label="Toggle AI Assistant"
+        suppressHydrationWarning
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -88,10 +94,10 @@ export default function FloatingChat() {
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <button className="btn btn-ghost btn-xs" onClick={clearChat} title="Clear chat history" style={{ padding: "3px 8px", fontSize: "10px" }}>
+            <button className="btn btn-ghost btn-xs" onClick={clearChat} title="Clear chat history" style={{ padding: "3px 8px", fontSize: "10px" }} suppressHydrationWarning>
               Clear
             </button>
-            <button className="close-panel-btn" onClick={() => setChatOpen(false)} title="Close Chat">
+            <button className="close-panel-btn" onClick={() => setChatOpen(false)} title="Close Chat" suppressHydrationWarning>
               ×
             </button>
           </div>
@@ -108,7 +114,9 @@ export default function FloatingChat() {
               <div key={i} className={`chat-row ${msg.role === "user" ? "user" : "bot"}`}>
                 <div className="chat-msg">{msg.content}</div>
                 <div className="chat-time">
-                  {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  {isMounted
+                    ? new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                    : ""}
                 </div>
               </div>
             ))
@@ -128,7 +136,7 @@ export default function FloatingChat() {
         {/* CHAT SUGGESTIONS */}
         <div className="chat-suggestions">
           {suggestions.map((text, i) => (
-            <button key={i} className="suggest-chip" onClick={() => handleSuggestion(text)}>
+            <button key={i} className="suggest-chip" onClick={() => handleSuggestion(text)} suppressHydrationWarning>
               {text}
             </button>
           ))}
@@ -143,12 +151,14 @@ export default function FloatingChat() {
             value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
             onKeyDown={handleKeyDown}
+            suppressHydrationWarning
           />
           <button
             className={`btn btn-icon btn-ghost ${voiceState.listening && voiceState.mode === 'command' ? 'listening' : ''}`}
             title="Voice command"
             onClick={toggleCommandMic}
             style={{ width: "36px", height: "36px", borderRadius: "8px", flexShrink: 0, padding: 0 }}
+            suppressHydrationWarning
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
@@ -161,6 +171,7 @@ export default function FloatingChat() {
             title="Toggle voice replies"
             onClick={toggleVoiceOut}
             style={{ width: "36px", height: "36px", borderRadius: "8px", flexShrink: 0, padding: 0 }}
+            suppressHydrationWarning
           >
             {settings.voiceOut ? (
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -175,7 +186,7 @@ export default function FloatingChat() {
               </svg>
             )}
           </button>
-          <button className="btn btn-accent btn-sm" onClick={handleSend} style={{ flexShrink: 0, height: "36px" }}>
+          <button className="btn btn-accent btn-sm" onClick={handleSend} style={{ flexShrink: 0, height: "36px" }} suppressHydrationWarning>
             Send
           </button>
         </div>

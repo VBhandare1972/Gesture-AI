@@ -182,6 +182,7 @@ export default function Navbar() {
             onClick={toggleCommandMic}
             title={voiceState.listening ? "Mute Microphone" : "Unmute Microphone"}
             style={{ cursor: "pointer", border: "none", background: "none", fontFamily: "inherit" }}
+            suppressHydrationWarning
           >
             <span className="dot"></span>
             <span>{voiceState.listening ? "MIC ON" : "MIC OFF"}</span>
@@ -192,6 +193,7 @@ export default function Navbar() {
             onClick={() => setSettings(prev => ({ ...prev, gesture: !prev.gesture }))}
             title={settings.gesture ? "Disable Gesture Camera" : "Enable Gesture Camera"}
             style={{ cursor: "pointer", border: "none", background: "none", fontFamily: "inherit" }}
+            suppressHydrationWarning
           >
             <span className="dot"></span>
             <span>{settings.gesture ? "CAM ON" : "CAM OFF"}</span>
@@ -205,6 +207,7 @@ export default function Navbar() {
             aria-label="Open menu"
             ref={hamburgerRef}
             onClick={() => setDrawerOpen(!drawerOpen)}
+            suppressHydrationWarning
           >
             <span></span>
             <span></span>

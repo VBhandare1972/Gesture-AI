@@ -84,6 +84,10 @@ export interface AppContextType {
     trackIndex: number;
     hindiIndex: number;
     englishIndex: number;
+    playingMode: string;
+    playingTrackIndex: number;
+    playingHindiIndex: number;
+    playingEnglishIndex: number;
     volume: number;
     trackTime: string;
   };
@@ -94,6 +98,10 @@ export interface AppContextType {
       trackIndex: number;
       hindiIndex: number;
       englishIndex: number;
+      playingMode: string;
+      playingTrackIndex: number;
+      playingHindiIndex: number;
+      playingEnglishIndex: number;
       volume: number;
       trackTime: string;
     }>
@@ -138,6 +146,7 @@ export interface AppContextType {
     humidity: string;
     windSpeed: string;
     hourly: Array<{ time: string; temp: string }>;
+    daily?: Array<{ time: string; maxTemp: string; minTemp: string; desc: string }>;
     weatherLastCity: string | null;
     lastWeatherSummary: string | null;
   };
@@ -151,6 +160,7 @@ export interface AppContextType {
       humidity: string;
       windSpeed: string;
       hourly: Array<{ time: string; temp: string }>;
+      daily?: Array<{ time: string; maxTemp: string; minTemp: string; desc: string }>;
       weatherLastCity: string | null;
       lastWeatherSummary: string | null;
     }>
@@ -188,9 +198,9 @@ export const TRACKS: Track[] = [
 export const HINDI_TRACKS: SongTrack[] = [
   { id: "BddP6PYo2gs", name: "Kesariya", artist: "Arijit Singh", movie: "Brahmāstra" },
   { id: "IJq0yyWug1k", name: "Tum Hi Ho", artist: "Arijit Singh", movie: "Aashiqui 2" },
-  { id: "PuhOFhmy3BU", name: "Senorita", artist: "Farhan Akhtar", movie: "Zindagi Na Milegi Dobara" },
   { id: "bzSTpdcs-EI", name: "Channa Mereya", artist: "Arijit Singh", movie: "Ae Dil Hai Mushkil" },
-  { id: "2R3XstG35sE", name: "Jai Ho", artist: "Sukhwinder Singh", movie: "Slumdog Millionaire" },
+  { id: "FdfS97c0U4g", name: "Ishq Bulaava", artist: "Sanam Puri, Shipra Goyal", movie: "Hasee Toh Phasee" },
+  { id: "hXn3x01LaWw", name: "Ok Jaanu (Title Track)", artist: "A.R. Rahman, Srinidhi", movie: "Ok Jaanu" }
 ];
 
 export const ENGLISH_TRACKS: SongTrack[] = [
@@ -198,7 +208,12 @@ export const ENGLISH_TRACKS: SongTrack[] = [
   { id: "JGwWNGJdvx8", name: "Shape of You", artist: "Ed Sheeran", movie: "Divide" },
   { id: "kTJczUoc26U", name: "Stay", artist: "The Kid LAROI & Justin Bieber", movie: "F*CK LOVE 3" },
   { id: "2Vv-BfVoq4g", name: "Perfect", artist: "Ed Sheeran", movie: "Divide" },
-  { id: "SyGMG_dHCoo", name: "Night Changes", artist: "One Direction", movie: "Four" },
+  { id: "3AtDnEC4zak", name: "We Don't Talk Anymore", artist: "Charlie Puth ft. Selena Gomez", movie: "Nine Track Mind" },
+  { id: "7wtfhZwyrcc", name: "Believer", artist: "Imagine Dragons", movie: "Evolve" },
+  { id: "09R8_2nJtjg", name: "Sugar", artist: "Maroon 5", movie: "V" },
+  { id: "kJQP7kiw5Fk", name: "Despacito", artist: "Luis Fonsi ft. Daddy Yankee", movie: "Vida" },
+  { id: "oyEuk8j8imI", name: "Love Yourself", artist: "Justin Bieber", movie: "Purpose" },
+  { id: "50VNCymT-As", name: "Let Me Down Slowly", artist: "Alec Benjamin", movie: "Narrated for You" }
 ];
 
 export function AppContextProvider({ children }: { children: ReactNode }) {
@@ -238,6 +253,10 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     trackIndex: 0,
     hindiIndex: 0,
     englishIndex: 0,
+    playingMode: "english",
+    playingTrackIndex: 0,
+    playingHindiIndex: 0,
+    playingEnglishIndex: 0,
     volume: 55,
     trackTime: "00:00",
   });
@@ -290,6 +309,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     humidity: string;
     windSpeed: string;
     hourly: Array<{ time: string; temp: string }>;
+    daily?: Array<{ time: string; maxTemp: string; minTemp: string; desc: string }>;
     weatherLastCity: string | null;
     lastWeatherSummary: string | null;
   }>({
@@ -301,6 +321,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     humidity: "--%",
     windSpeed: "-- km/h",
     hourly: [],
+    daily: [],
     weatherLastCity: null,
     lastWeatherSummary: null,
   });
@@ -606,7 +627,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   };
 
   const fetchForecast = (lat: number, lon: number, label: string, cityName: string, triggerSpeech = false) => {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code&hourly=temperature_2m,weather_code&timezone=auto&forecast_days=1`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`;
     fetch(url)
       .then((r) => r.json())
       .then((data) => renderWeather(label, data, cityName, triggerSpeech))
@@ -625,6 +646,17 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       return { time: `${hr}:00`, temp: `${Math.round(temp)}°` };
     });
 
+    const dailyForecasts = data.daily ? data.daily.time.map((t: string, i: number) => {
+      const code = data.daily.weather_code[i];
+      const [desc] = weatherCodeInfo(code);
+      return {
+        time: t,
+        maxTemp: `${Math.round(data.daily.temperature_2m_max[i])}°`,
+        minTemp: `${Math.round(data.daily.temperature_2m_min[i])}°`,
+        desc: desc
+      };
+    }) : [];
+
     const summary = `${label} is ${desc.toLowerCase()} at ${Math.round(cur.temperature_2m)} degrees, feels like ${Math.round(cur.apparent_temperature)}.`;
 
     setWeatherState((prev) => ({
@@ -636,6 +668,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       humidity: `${cur.relative_humidity_2m}%`,
       windSpeed: `${Math.round(cur.wind_speed_10m)} km/h`,
       hourly: hourlyForecasts,
+      daily: dailyForecasts,
       weatherLastCity: cityName,
       lastWeatherSummary: summary,
     }));
@@ -658,12 +691,32 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     musicPlayingRef.current = musicState.playing;
-    musicModeRef.current = musicState.mode;
-    trackIndexRef.current = musicState.trackIndex;
-    hindiIndexRef.current = musicState.hindiIndex;
-    englishIndexRef.current = musicState.englishIndex;
+    musicModeRef.current = musicState.playingMode;
+    trackIndexRef.current = musicState.playingTrackIndex;
+    hindiIndexRef.current = musicState.playingHindiIndex;
+    englishIndexRef.current = musicState.playingEnglishIndex;
     musicVolumeRef.current = musicState.volume / 100;
   }, [musicState]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      (window as any)._ytPlayerPromiseReset = () => {
+        if (ytPlayerRef.current) {
+          try {
+            if (ytPlayerRef.current.destroy) {
+              ytPlayerRef.current.destroy();
+            }
+          } catch (e) {}
+          ytPlayerRef.current = null;
+        }
+        ytPlayerPromiseRef.current = null;
+      };
+      (window as any).stopAudio = () => {
+        stopAudio();
+        setMusicState((prev) => ({ ...prev, playing: false, trackTime: "00:00" }));
+      };
+    }
+  }, []);
 
   const ensureAudioContext = () => {
     if (typeof window === "undefined") return;
@@ -720,7 +773,12 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       return { osc, lfo, g };
     });
 
-    setMusicState((prev) => ({ ...prev, playing: true }));
+    setMusicState((prev) => ({
+      ...prev,
+      playing: true,
+      playingMode: prev.mode,
+      playingTrackIndex: prev.trackIndex,
+    }));
     startViz();
     startMusicTimer();
   };
@@ -733,18 +791,44 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   };
 
   const playYouTube = () => {
-    setMusicState((prev) => ({ ...prev, playing: true }));
-    ensureYTPlayer().then((p) => {
-      const mode = musicModeRef.current;
-      const id = mode === "hindi"
-        ? HINDI_TRACKS[hindiIndexRef.current].id
-        : ENGLISH_TRACKS[englishIndexRef.current].id;
-      p.loadVideoById(id);
-      p.playVideo();
-      startMusicTimer();
-    }).catch(() => {
-      showToast("Could not load YouTube player");
-      setMusicState((prev) => ({ ...prev, playing: false }));
+    setMusicState((prev) => {
+      const mode = prev.mode;
+      const trackId = mode === "hindi"
+        ? HINDI_TRACKS[prev.hindiIndex].id
+        : ENGLISH_TRACKS[prev.englishIndex].id;
+
+      ensureYTPlayer().then((p) => {
+        try {
+          if (p && typeof p.loadVideoById === "function") {
+            p.loadVideoById(trackId);
+            p.playVideo();
+            startMusicTimer();
+          } else {
+            setTimeout(() => {
+              try {
+                if (p && typeof p.loadVideoById === "function") {
+                  p.loadVideoById(trackId);
+                  p.playVideo();
+                  startMusicTimer();
+                }
+              } catch (e) {}
+            }, 1000);
+          }
+        } catch (err) {
+          console.error("Player loading error", err);
+        }
+      }).catch((e) => {
+        console.error("Could not load YouTube player promise", e);
+        setMusicState((s) => ({ ...s, playing: false }));
+      });
+
+      return {
+        ...prev,
+        playing: true,
+        playingMode: mode,
+        playingHindiIndex: prev.hindiIndex,
+        playingEnglishIndex: prev.englishIndex,
+      };
     });
   };
 
@@ -774,9 +858,15 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     stopMusicTimer();
     stopViz();
     stopFakeViz();
-    if (ytPlayerRef.current && ytPlayerRef.current.stopVideo) {
-      try { ytPlayerRef.current.stopVideo(); } catch (e) {}
+    if (ytPlayerRef.current) {
+      try {
+        if (ytPlayerRef.current.destroy) {
+          ytPlayerRef.current.destroy();
+        }
+      } catch (e) {}
+      ytPlayerRef.current = null;
     }
+    ytPlayerPromiseRef.current = null; // Clear the player promise so it recreates on next play
   };
 
   const startMusicTimer = () => {
@@ -813,65 +903,96 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const switchMusicMode = (mode: string) => {
     if (musicModeRef.current === mode) return;
-    stopAudio();
     setMusicState((prev) => ({
       ...prev,
       mode,
-      playing: false,
-      trackTime: "00:00",
     }));
   };
 
   const nextTrack = () => {
-    const mode = musicState.mode;
     const isPlaying = musicPlayingRef.current;
     stopAudio();
 
-    if (mode === "hindi") {
-      const nextIdx = (hindiIndexRef.current + 1) % HINDI_TRACKS.length;
-      setMusicState((prev) => ({ ...prev, hindiIndex: nextIdx, playing: isPlaying }));
-      if (isPlaying) {
-        setTimeout(() => playYouTube(), 100);
+    setMusicState((prev) => {
+      const mode = prev.playingMode;
+      let nextHindi = prev.playingHindiIndex;
+      let nextEnglish = prev.playingEnglishIndex;
+      let nextTrackIdx = prev.playingTrackIndex;
+
+      if (mode === "hindi") {
+        nextHindi = (prev.playingHindiIndex + 1) % HINDI_TRACKS.length;
+      } else if (mode === "english") {
+        nextEnglish = (prev.playingEnglishIndex + 1) % ENGLISH_TRACKS.length;
+      } else {
+        nextTrackIdx = (prev.playingTrackIndex + 1) % TRACKS.length;
       }
-    } else if (mode === "english") {
-      const nextIdx = (englishIndexRef.current + 1) % ENGLISH_TRACKS.length;
-      setMusicState((prev) => ({ ...prev, englishIndex: nextIdx, playing: isPlaying }));
+
+      // Sync browser browsing index if we are on the same mode tab
+      const browseHindi = prev.mode === "hindi" ? nextHindi : prev.hindiIndex;
+      const browseEnglish = prev.mode === "english" ? nextEnglish : prev.englishIndex;
+      const browseTrack = prev.mode === "ambient" ? nextTrackIdx : prev.trackIndex;
+
       if (isPlaying) {
-        setTimeout(() => playYouTube(), 100);
+        setTimeout(() => {
+          if (mode === "hindi" || mode === "english") playYouTube();
+          else playAmbient();
+        }, 100);
       }
-    } else {
-      const nextIdx = (trackIndexRef.current + 1) % TRACKS.length;
-      setMusicState((prev) => ({ ...prev, trackIndex: nextIdx, playing: isPlaying }));
-      if (isPlaying) {
-        setTimeout(() => playAmbient(), 100);
-      }
-    }
+
+      return {
+        ...prev,
+        playingHindiIndex: nextHindi,
+        playingEnglishIndex: nextEnglish,
+        playingTrackIndex: nextTrackIdx,
+        hindiIndex: browseHindi,
+        englishIndex: browseEnglish,
+        trackIndex: browseTrack,
+        playing: isPlaying
+      };
+    });
   };
 
   const prevTrack = () => {
-    const mode = musicState.mode;
     const isPlaying = musicPlayingRef.current;
     stopAudio();
 
-    if (mode === "hindi") {
-      const prevIdx = (hindiIndexRef.current - 1 + HINDI_TRACKS.length) % HINDI_TRACKS.length;
-      setMusicState((prev) => ({ ...prev, hindiIndex: prevIdx, playing: isPlaying }));
-      if (isPlaying) {
-        setTimeout(() => playYouTube(), 100);
+    setMusicState((prev) => {
+      const mode = prev.playingMode;
+      let prevHindi = prev.playingHindiIndex;
+      let prevEnglish = prev.playingEnglishIndex;
+      let prevTrackIdx = prev.playingTrackIndex;
+
+      if (mode === "hindi") {
+        prevHindi = (prev.playingHindiIndex - 1 + HINDI_TRACKS.length) % HINDI_TRACKS.length;
+      } else if (mode === "english") {
+        prevEnglish = (prev.playingEnglishIndex - 1 + ENGLISH_TRACKS.length) % ENGLISH_TRACKS.length;
+      } else {
+        prevTrackIdx = (prev.playingTrackIndex - 1 + TRACKS.length) % TRACKS.length;
       }
-    } else if (mode === "english") {
-      const prevIdx = (englishIndexRef.current - 1 + ENGLISH_TRACKS.length) % ENGLISH_TRACKS.length;
-      setMusicState((prev) => ({ ...prev, englishIndex: prevIdx, playing: isPlaying }));
+
+      // Sync browser browsing index if we are on the same mode tab
+      const browseHindi = prev.mode === "hindi" ? prevHindi : prev.hindiIndex;
+      const browseEnglish = prev.mode === "english" ? prevEnglish : prev.englishIndex;
+      const browseTrack = prev.mode === "ambient" ? prevTrackIdx : prev.trackIndex;
+
       if (isPlaying) {
-        setTimeout(() => playYouTube(), 100);
+        setTimeout(() => {
+          if (mode === "hindi" || mode === "english") playYouTube();
+          else playAmbient();
+        }, 100);
       }
-    } else {
-      const prevIdx = (trackIndexRef.current - 1 + TRACKS.length) % TRACKS.length;
-      setMusicState((prev) => ({ ...prev, trackIndex: prevIdx, playing: isPlaying }));
-      if (isPlaying) {
-        setTimeout(() => playAmbient(), 100);
-      }
-    }
+
+      return {
+        ...prev,
+        playingHindiIndex: prevHindi,
+        playingEnglishIndex: prevEnglish,
+        playingTrackIndex: prevTrackIdx,
+        hindiIndex: browseHindi,
+        englishIndex: browseEnglish,
+        trackIndex: browseTrack,
+        playing: isPlaying
+      };
+    });
   };
 
   const startViz = () => {
@@ -930,27 +1051,51 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   };
 
   const ensureYTPlayer = () => {
-    if (ytPlayerPromiseRef.current) return ytPlayerPromiseRef.current;
-    ytPlayerPromiseRef.current = loadYouTubeAPI().then(() => new Promise((resolve, reject) => {
+    // Reuse the existing player if it is still alive
+    if (ytPlayerPromiseRef.current) {
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.getPlayerState === "function") {
+        return ytPlayerPromiseRef.current;
+      }
+      // Player was destroyed — discard stale promise and rebuild
+      ytPlayerPromiseRef.current = null;
+    }
+
+    ytPlayerPromiseRef.current = loadYouTubeAPI().then(() => new Promise<any>((resolve, reject) => {
       try {
-        ytPlayerRef.current = new (window as any).YT.Player("ytPlayer", {
+        // Always work with #globalYtPlayerContainer directly — never search by #ytPlayer id,
+        // because the YT API replaces/removes that element and leaves it in an unknown state.
+        const container = document.getElementById("globalYtPlayerContainer");
+        if (!container) {
+          reject(new Error("globalYtPlayerContainer not in DOM"));
+          return;
+        }
+
+        // Wipe any stale iframe/div and give the API a clean fresh target element
+        container.innerHTML = "";
+        const targetEl = document.createElement("div");
+        targetEl.style.width = "100%";
+        targetEl.style.height = "100%";
+        container.appendChild(targetEl);
+
+        ytPlayerRef.current = new (window as any).YT.Player(targetEl, {
           height: "100%",
           width: "100%",
           videoId: musicModeRef.current === "english"
             ? ENGLISH_TRACKS[englishIndexRef.current].id
             : HINDI_TRACKS[hindiIndexRef.current].id,
-          playerVars: { rel: 0, modestbranding: 1, playsinline: 1 },
+          playerVars: { rel: 0, modestbranding: 1, playsinline: 1, autoplay: 1 },
           events: {
-            onReady: () => {
-              ytPlayerRef.current.setVolume(musicVolumeRef.current * 100);
-              resolve(ytPlayerRef.current);
+            onReady: (e: any) => {
+              e.target.setVolume(musicVolumeRef.current * 100);
+              resolve(e.target);
             },
             onStateChange: (e: any) => {
               if (e.data === (window as any).YT.PlayerState.PLAYING) startFakeViz();
               else stopFakeViz();
             },
             onError: () => {
-              showToast("That track is unavailable right now");
+              showToast("Video unavailable. Playing synthesizer audio...");
+              playAmbient();
             },
           },
         });
