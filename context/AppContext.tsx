@@ -147,6 +147,7 @@ export interface AppContextType {
     windSpeed: string;
     hourly: Array<{ time: string; temp: string }>;
     daily?: Array<{ time: string; maxTemp: string; minTemp: string; desc: string }>;
+    isDay?: number;
     weatherLastCity: string | null;
     lastWeatherSummary: string | null;
   };
@@ -161,6 +162,7 @@ export interface AppContextType {
       windSpeed: string;
       hourly: Array<{ time: string; temp: string }>;
       daily?: Array<{ time: string; maxTemp: string; minTemp: string; desc: string }>;
+      isDay?: number;
       weatherLastCity: string | null;
       lastWeatherSummary: string | null;
     }>
@@ -185,6 +187,7 @@ export interface AppContextType {
   enableGestureCamera: (videoEl: HTMLVideoElement, canvasEl: HTMLCanvasElement) => Promise<void>;
   disableGestureCamera: () => void;
   stopCameraOnly: () => void;
+  lastGesture: string | null;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -310,6 +313,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     windSpeed: string;
     hourly: Array<{ time: string; temp: string }>;
     daily?: Array<{ time: string; maxTemp: string; minTemp: string; desc: string }>;
+    isDay?: number;
     weatherLastCity: string | null;
     lastWeatherSummary: string | null;
   }>({
@@ -322,6 +326,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     windSpeed: "-- km/h",
     hourly: [],
     daily: [],
+    isDay: 1,
     weatherLastCity: null,
     lastWeatherSummary: null,
   });
@@ -351,6 +356,10 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const peaceStartRef = useRef<number | null>(null);
   const cameraRef = useRef<any>(null);
   const handsRef = useRef<any>(null);
+  const pathnameRef = useRef(pathname);
+  useEffect(() => {
+    pathnameRef.current = pathname;
+  }, [pathname]);
 
   const showToast = (msg: string) => {
     const id = Date.now() + Math.random().toString(36).substr(2, 9);
@@ -627,7 +636,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   };
 
   const fetchForecast = (lat: number, lon: number, label: string, cityName: string, triggerSpeech = false) => {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code,is_day&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto`;
     fetch(url)
       .then((r) => r.json())
       .then((data) => renderWeather(label, data, cityName, triggerSpeech))
@@ -669,6 +678,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       windSpeed: `${Math.round(cur.wind_speed_10m)} km/h`,
       hourly: hourlyForecasts,
       daily: dailyForecasts,
+      isDay: cur.is_day !== undefined ? cur.is_day : 1,
       weatherLastCity: cityName,
       lastWeatherSummary: summary,
     }));
@@ -1138,10 +1148,10 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   };
 
   const gestureToRPS = () => {
-    const g = lastGesture;
-    if (g === "fist") return "rock";
-    if (g === "open_palm") return "paper";
-    if (g === "peace") return "scissors";
+    const g = (lastGesture || "").toLowerCase();
+    if (g.includes("fist")) return "rock";
+    if (g.includes("open palm") || g.includes("paper")) return "paper";
+    if (g.includes("peace") || g.includes("scissors")) return "scissors";
     return null;
   };
 
@@ -1252,11 +1262,59 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       speak("Opening notes.");
       return;
     }
-    if (/\bgames?\b|rock\s*paper\s*scissors/.test(t)) {
-      router.push("/games");
-      speak("Let's play.");
-      return;
-    }
+     if (/\bgames?\b|rock\s*paper\s*scissors|hill\s*climb|start\s*game|pause\s*game|resume\s*game|restart\s*game|exit\s*game/.test(t)) {
+       router.push("/games");
+       speak("Opening games page.");
+
+       // Global voice commands dispatched to the game viewport
+       if (/\bstart\s*game\b/.test(t)) {
+         setTimeout(() => {
+           window.dispatchEvent(new CustomEvent("jarvis-game-control", { detail: { action: "start" } }));
+         }, 800);
+       } else if (/\bpause\s*game\b/.test(t)) {
+         setTimeout(() => {
+           window.dispatchEvent(new CustomEvent("jarvis-game-control", { detail: { action: "pause" } }));
+         }, 800);
+       } else if (/\bresume\s*game\b/.test(t)) {
+         setTimeout(() => {
+           window.dispatchEvent(new CustomEvent("jarvis-game-control", { detail: { action: "resume" } }));
+         }, 800);
+       } else if (/\brestart\s*game\b/.test(t)) {
+         setTimeout(() => {
+           window.dispatchEvent(new CustomEvent("jarvis-game-control", { detail: { action: "restart" } }));
+         }, 800);
+       } else if (/\bexit\s*game\b/.test(t)) {
+         setTimeout(() => {
+           window.dispatchEvent(new CustomEvent("jarvis-game-control", { detail: { action: "exit" } }));
+         }, 800);
+       } else {
+         speak("Let's play.");
+       }
+       return;
+     }
+     
+     if (pathnameRef.current === "/games") {
+       if (/\bstart\s*game\b/.test(t)) {
+         window.dispatchEvent(new CustomEvent("jarvis-game-control", { detail: { action: "start" } }));
+         return;
+       }
+       if (/\bpause\s*game\b/.test(t)) {
+         window.dispatchEvent(new CustomEvent("jarvis-game-control", { detail: { action: "pause" } }));
+         return;
+       }
+       if (/\bresume\s*game\b/.test(t)) {
+         window.dispatchEvent(new CustomEvent("jarvis-game-control", { detail: { action: "resume" } }));
+         return;
+       }
+       if (/\brestart\s*game\b/.test(t)) {
+         window.dispatchEvent(new CustomEvent("jarvis-game-control", { detail: { action: "restart" } }));
+         return;
+       }
+       if (/\bexit\s*game\b/.test(t)) {
+         window.dispatchEvent(new CustomEvent("jarvis-game-control", { detail: { action: "exit" } }));
+         return;
+       }
+     }
     if (/\bsettings?\b/.test(t)) {
       router.push("/settings");
       speak("Opening settings.");
@@ -1512,7 +1570,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
       setGestureCursor({ x: vx, y: vy, show: true, pinched: pinching });
 
-      if (pathname === "/draw") {
+      const currentPath = pathnameRef.current;
+      if (currentPath === "/draw") {
         window.dispatchEvent(new CustomEvent("gesture-draw", { detail: { x: vx, y: vy, pinching } }));
       } else {
         if (pinching) {
@@ -1524,7 +1583,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       if (gesture === "open_palm") {
         if (!palmStartRef.current) palmStartRef.current = now;
         if (now - palmStartRef.current > 800) {
-          if (pathname !== "/") {
+          if (currentPath !== "/") {
             router.push("/");
             showToast("Gesture: Home");
           }
@@ -1536,9 +1595,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
       if (gesture === "peace") {
         if (!peaceStartRef.current) peaceStartRef.current = now;
-        if (now - peaceStartRef.current > 800) {
+        if (now - peaceStartRef.current > 400) {
           const VIEW_ORDER = ["/", "/draw", "/music", "/weather", "/games", "/notes", "/calc", "/settings"];
-          const i = VIEW_ORDER.indexOf(pathname);
+          const i = VIEW_ORDER.indexOf(currentPath);
           const next = VIEW_ORDER[(i + 1) % VIEW_ORDER.length];
           router.push(next);
           showToast("Gesture: Next module");
@@ -1550,7 +1609,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     } else {
       setGestureLabel("No hand detected");
       setGestureCursor((prev) => ({ ...prev, show: false }));
-      if (pathname === "/draw") {
+      if (pathnameRef.current === "/draw") {
         window.dispatchEvent(new CustomEvent("gesture-draw-end"));
       }
     }
@@ -1646,6 +1705,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     enableGestureCamera,
     disableGestureCamera,
     stopCameraOnly,
+    lastGesture,
     chatOpen,
     setChatOpen,
   };

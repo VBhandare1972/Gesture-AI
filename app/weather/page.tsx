@@ -15,6 +15,13 @@ const AnimatedSun = () => (
   </div>
 );
 
+const AnimatedMoon = () => (
+  <div className="wx-moon-wrap">
+    <div className="wx-moon-core"></div>
+    <div className="wx-moon-halo"></div>
+  </div>
+);
+
 const AnimatedCloud = ({ className = "" }: { className?: string }) => (
   <div className={`wx-cloud ${className}`}>
     <div className="wx-cloud-body"></div>
@@ -47,7 +54,7 @@ const LightningBolt = () => (
   </div>
 );
 
-const WeatherScene = ({ desc }: { desc: string }) => {
+const WeatherScene = ({ desc, isDay = 1 }: { desc: string; isDay?: number }) => {
   const d = (desc || "").toLowerCase();
   const isRain = d.includes("rain") || d.includes("drizzle") || d.includes("shower");
   const isStorm = d.includes("thunderstorm");
@@ -58,22 +65,31 @@ const WeatherScene = ({ desc }: { desc: string }) => {
 
   return (
     <div className="wx-scene">
-      {/* Stars (night-like bg dots) */}
-      <div className="wx-stars">
+      {/* Stars (night-like bg dots) - visible mostly during night */}
+      <div className="wx-stars" style={{ opacity: isDay === 0 ? 1 : 0.25 }}>
         {Array.from({ length: 30 }).map((_, i) => (
           <div key={i} className="wx-star" style={{ "--wi": i } as any}></div>
         ))}
       </div>
 
-      {/* Sun — shown unless cloudy/rain/storm */}
-      {!isStorm && !isRain && !isFog && <AnimatedSun />}
+      {/* Sun/Moon — shown exclusively during clear skies, fog, or snow (no heavy clouds) */}
+      {!isStorm && !isRain && !isFog && !isCloudy && (
+        isDay === 1 ? <AnimatedSun /> : <AnimatedMoon />
+      )}
 
-      {/* Dim sun behind clouds */}
-      {(isCloudy || isRain) && !isStorm && (
-        <div className="wx-sun-wrap wx-sun-dim">
-          <div className="wx-sun-core"></div>
-          <div className="wx-sun-halo"></div>
-        </div>
+      {/* Dim sun/moon behind clouds */}
+      {(isCloudy || isRain) && !isStorm && !isFog && (
+        isDay === 1 ? (
+          <div className="wx-sun-wrap wx-sun-dim">
+            <div className="wx-sun-core"></div>
+            <div className="wx-sun-halo"></div>
+          </div>
+        ) : (
+          <div className="wx-moon-wrap wx-moon-dim">
+            <div className="wx-moon-core"></div>
+            <div className="wx-moon-halo"></div>
+          </div>
+        )
       )}
 
       {/* Clouds */}
@@ -120,15 +136,16 @@ const IconUV      = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="
 const IconEye     = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>;
 const IconGauge   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z"/><path d="M12 6v6l4 2"/></svg>;
 
-const getBg = (desc: string) => {
+const getBg = (desc: string, isDay = 1) => {
   const d = (desc || "").toLowerCase();
-  if (d.includes("clear"))        return "wx-sky-clear";
-  if (d.includes("thunderstorm")) return "wx-sky-storm";
-  if (d.includes("rain") || d.includes("drizzle") || d.includes("shower")) return "wx-sky-rain";
-  if (d.includes("snow"))         return "wx-sky-snow";
-  if (d.includes("cloud") || d.includes("overcast")) return "wx-sky-cloudy";
-  if (d.includes("fog"))          return "wx-sky-fog";
-  return "wx-sky-default";
+  const suffix = isDay === 0 ? "-night" : "";
+  if (d.includes("clear"))        return `wx-sky-clear${suffix}`;
+  if (d.includes("thunderstorm")) return `wx-sky-storm${suffix}`;
+  if (d.includes("rain") || d.includes("drizzle") || d.includes("shower")) return `wx-sky-rain${suffix}`;
+  if (d.includes("snow"))         return `wx-sky-snow${suffix}`;
+  if (d.includes("cloud") || d.includes("overcast")) return `wx-sky-cloudy${suffix}`;
+  if (d.includes("fog"))          return `wx-sky-fog${suffix}`;
+  return `wx-sky-default${suffix}`;
 };
 
 const getWeatherSVG = (desc: string, size = 24) => {
@@ -347,11 +364,10 @@ export default function WeatherPage() {
   return (
     <section className="view active" id="view-weather">
       {/* Header */}
-      <div className="view-head">
+      <div className="view-head" style={{ marginBottom: "12px" }}>
         <div>
-         
           <h1 className="view-title">Weather</h1>
-          <div className="view-sub">Live atmospheric data — open-meteo, no key, no tracking.</div>
+          <div className="view-sub">Live atmospheric data.</div>
         </div>
         {mounted && (
           <div className="wx-header-time">
@@ -359,6 +375,33 @@ export default function WeatherPage() {
             <div className="wx-date">{date}</div>
           </div>
         )}
+      </div>
+
+      {/* Unique dynamic system recommendation alert block */}
+      <div className="wx-alert-banner">
+        <div className="wx-ab-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </div>
+        <div className="wx-ab-content">
+          <span className="title">SYSTEM OPTIMIZATION:</span>
+          <span className="desc">
+            {hasData ? (() => {
+              const desc = weatherState.desc.toLowerCase();
+              if (desc.includes("rain") || desc.includes("drizzle") || desc.includes("shower")) {
+                return "A refreshing shower cleanses the atmosphere. Perfect opportunity for cozy focus, deep learning, and indoor creativity.";
+              }
+              if (desc.includes("clear") || desc.includes("sunny")) {
+                return "Bright skies ahead! Energy levels are peaking. Step outside, soak up the positive rays, and enjoy a beautiful day.";
+              }
+              if (desc.includes("cloud") || desc.includes("overcast")) {
+                return "Cool, comfortable overcast. Ideal ambient lighting for photography, peaceful walks, and relaxing outdoor activities.";
+              }
+              return "A fresh breeze of change in the air. Telemetry confirms a wonderful day ahead, ready for your next adventure.";
+            })() : "Welcome! Type in a city to discover local highlights and unlock positive recommendations for your day."}
+          </span>
+        </div>
       </div>
 
       {/* Search Container with Autocomplete Suggestions */}
@@ -392,9 +435,9 @@ export default function WeatherPage() {
       </div>
 
       {/* ── Hero ──────────────────────────────────────────────────── */}
-      <div className={`wx-hero ${getBg(weatherState.desc)}`}>
+      <div className={`wx-hero ${getBg(weatherState.desc, weatherState.isDay)}`}>
         {/* Animated sky scene */}
-        <WeatherScene desc={weatherState.desc} />
+        <WeatherScene desc={weatherState.desc} isDay={weatherState.isDay} />
 
         {/* Overlay info */}
         <div className="wx-hero-overlay">
@@ -438,6 +481,7 @@ export default function WeatherPage() {
         <>
           <div className="wx-section-head">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        
             Hourly Forecast
           </div>
           <div className="wx-hourly">

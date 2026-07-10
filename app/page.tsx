@@ -171,7 +171,7 @@ export default function DashboardPage() {
           </svg>
           <span className="r-label">GESTURE.AI</span>
           <span className="r-status mono" id="reactorStatus">
-            SYSTEMS NOMINAL
+            SYSTEMS 
           </span>
         </div>
 

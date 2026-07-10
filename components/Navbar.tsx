@@ -9,8 +9,18 @@ export default function Navbar() {
   const pathname = usePathname();
   const { voiceState, settings, currentTime, toggleCommandMic, setSettings } = useApp();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLButtonElement>(null);
+
+  // Toggle scrolled state when window is scrolled past 10px
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Close drawer if clicked outside
   useEffect(() => {
@@ -127,7 +137,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="navbar">
+      <header className={`navbar ${scrolled ? "scrolled" : ""}`}>
         <div className="nav-left">
           <div className="brand-logo">
             <div className="brand-core-container">
