@@ -1,16 +1,18 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useApp, HINDI_TRACKS, ENGLISH_TRACKS, TRACKS } from "@/context/AppContext";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import BootScreen from "./BootScreen";
 import Onboarding from "./Onboarding";
+import LoginScreen from "./LoginScreen";
+import { useAuth } from "@/context/AuthContext";
 import GestureHUD from "./GestureHUD";
 import ToastStack from "./ToastStack";
 import FloatingChat from "./FloatingChat";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 
 // Off-screen style: proper 640x360 so browsers never throttle the iframe
@@ -30,6 +32,9 @@ const OFFSCREEN_STYLE: React.CSSProperties = {
 export default function LayoutContent({ children }: { children: React.ReactNode }) {
   const { voiceState, musicState, playMusic, pauseMusic, prevTrack, nextTrack } = useApp();
   const pathname = usePathname();
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  const { user, authLoading } = useAuth();
 
   const isMusicPage = pathname === "/music";
   const hasActiveMusic = musicState.playing || musicState.trackTime !== "00:00";
@@ -121,6 +126,29 @@ export default function LayoutContent({ children }: { children: React.ReactNode 
       obs?.disconnect();
     };
   }, [isMusicPage, pathname]);
+
+  useEffect(() => {
+    const handleRouteCommand = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const path = customEvent.detail;
+      if (path === "/logout") {
+        return;
+      }
+      if (["/", "/notes", "/chat", "/games", "/calc", "/weather", "/draw", "/music", "/settings"].includes(path)) {
+        router.push(path);
+      }
+    };
+    window.addEventListener("jarvis-route", handleRouteCommand);
+    return () => window.removeEventListener("jarvis-route", handleRouteCommand);
+  }, [router]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || authLoading) return <div id="bootScreen"><div className="boot-text-light">Authenticating...</div></div>;
+
+  if (!user) return <LoginScreen />;
 
   return (
     <>

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
-    const { userText, chatHistory } = await request.json();
+    const { userText, chatHistory, userName } = await request.json();
     const apiKey = process.env.GROQ_API_KEY || process.env.ANTHROPIC_API_KEY;
 
     if (!apiKey) {
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
     PERSONALITY & BEHAVIOR:
     - Keep visible replies warm, concise, dry-witted, and helpful (1-3 sentences unless explicitly asked for comprehensive step-by-step guides).
-    - Address the speaker as "User" or in a premium assistant tone.
+    - Address the speaker naturally as "${userName || "User"}" or in a premium assistant tone.
     - Be witty and efficient. Speak like a highly capable virtual butler.
 
     DASHBOARD INTERFACE FEATURES:

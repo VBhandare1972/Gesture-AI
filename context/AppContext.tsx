@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { useAuth } from "./AuthContext";
 
 export interface Track {
   name: string;
@@ -223,6 +224,7 @@ export const ENGLISH_TRACKS: SongTrack[] = [
 export function AppContextProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { user } = useAuth();
 
   const [booting, setBooting] = useState(true);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
@@ -237,10 +239,17 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [cmdLogEntries, setCmdLogEntries] = useState<CmdLogEntry[]>([]);
   const [notes, setNotes] = useState<NoteItem[]>([]);
   
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([
-    { role: "assistant", content: "Systems online. I'm JARVIS — ask me anything, or tell me to open a module." },
-  ]);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [chatOpen, setChatOpen] = useState(false);
+
+  useEffect(() => {
+    if (user?.displayName) {
+      const firstName = user.displayName.split(" ")[0];
+      setChatHistory([{ role: "assistant", content: `Welcome back, ${firstName}. All systems are online.` }]);
+    } else {
+      setChatHistory([{ role: "assistant", content: `Welcome. All systems are online.` }]);
+    }
+  }, [user]);
   const [isTyping, setIsTyping] = useState(false);
 
   const [settings, setSettings] = useState<AppSettings>({
@@ -579,6 +588,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userText: text,
+          userName: user?.displayName ? user.displayName.split(" ")[0] : null,
           chatHistory: chatHistory.slice(-10).map((m) => ({ role: m.role, content: m.content })),
         }),
       });
@@ -1332,8 +1342,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       speak("Opening settings.");
       return;
     }
-
-    setChatOpen(true);
+    // We add the user's message to the chat history and respond, 
+    // but we do NOT automatically open the chat panel (setChatOpen(true)) 
+    // so the conversation can happen seamlessly in the background.
     setChatHistory((prev) => [...prev, { role: "user", content: rawText }]);
     respondAsAI(rawText);
   };

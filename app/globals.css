@@ -4280,19 +4280,28 @@ main {
   bottom: 80px;
   right: 16px;
   z-index: 601;
-  max-width: 250px;
-  font-size: 12px;
-  background: rgba(255, 255, 255, 0.98);
-  border: 1px solid var(--line-s);
+  max-width: 300px;
+  font-size: 14px;
+  line-height: 1.4;
+  background: rgba(20, 5, 10, 0.9);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(254, 208, 187, 0.3);
   border-radius: 12px;
-  padding: 8px 12px;
-  color: var(--txt-dim);
+  padding: 12px 16px;
+  color: var(--text-hi);
+  font-weight: 500;
   display: none;
-  box-shadow: 0 4px 16px rgba(217, 43, 43, 0.12);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(254, 208, 187, 0.1);
 }
 
 .mic-caption.show {
   display: block;
+  animation: slideUpFade 0.3s ease-out forwards;
+}
+
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .hud-toast-stack {
