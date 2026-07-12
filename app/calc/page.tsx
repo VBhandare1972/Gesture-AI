@@ -115,36 +115,77 @@ export default function CalculatorPage() {
 
   const keys = ["C", "⌫", "%", "÷", "7", "8", "9", "×", "4", "5", "6", "−", "1", "2", "3", "+", "0", ".", "="];
 
+  const customStyles = `
+    @keyframes calcSlideUp {
+      0% { opacity: 0; transform: translateY(50px) scale(0.95); filter: blur(8px); }
+      60% { opacity: 1; transform: translateY(-5px) scale(1.02); filter: blur(0); }
+      100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+    }
+    @keyframes btnPop {
+      0% { opacity: 0; transform: translateY(15px) scale(0.85); filter: blur(4px); }
+      60% { opacity: 1; transform: translateY(-2px) scale(1.05); filter: blur(0); }
+      100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+    }
+    .calc-wrap-animated {
+      animation: calcSlideUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(254, 208, 187, 0.15) !important;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .calc-wrap-animated:hover {
+      box-shadow: 0 30px 60px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(254, 208, 187, 0.3) !important;
+    }
+    .calc-btn-animated {
+      opacity: 0;
+      animation: btnPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .calc-btn-animated:hover {
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4), 0 0 15px rgba(254,208,187,0.25);
+      z-index: 10;
+      border-color: rgba(254, 208, 187, 0.5);
+      text-shadow: 0 0 8px rgba(254, 208, 187, 0.5);
+    }
+    .calc-btn-animated:active {
+      transform: translateY(2px) scale(0.95);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    .calc-display-animated {
+      transition: all 0.3s ease;
+      text-shadow: 0 0 25px rgba(254, 208, 187, 0.4);
+      border-bottom: 1px solid rgba(254, 208, 187, 0.15);
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+    }
+  `;
+
   return (
     <section className="view active" id="view-calc">
+      <style>{customStyles}</style>
       <div className="view-head">
         <div>
-          <div className="eyebrow">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="4" y="2" width="16" height="20" rx="2" />
-              <line x1="8" y1="6" x2="16" y2="6" />
-              <line x1="8" y1="10" x2="16" y2="10" />
-            </svg>{" "}
-            Module 07
-          </div>
+          
           <h1 className="view-title">Calculator</h1>
           <div className="view-sub">Standard arithmetic, HUD styled.</div>
         </div>
       </div>
 
-      <div className="panel calc-wrap brackets">
-        <div className="calc-display">
+      <div className="panel calc-wrap brackets calc-wrap-animated">
+        <div className="calc-display calc-display-animated">
           <span className="expr mono" id="calcExpr">
             {evalExpr ? evalExpr : <>&nbsp;</>}
           </span>
           <span id="calcDisplay">{displayStr}</span>
         </div>
         <div className="calc-grid" id="calcGrid">
-          {keys.map((k) => (
+          {keys.map((k, idx) => (
             <button
               key={k}
-              className={`calc-btn ${/[÷×−+]/.test(k) ? "op" : ""} ${k === "=" ? "eq" : ""}`}
-              style={{ gridColumn: k === "=" ? "span 2" : "auto" }}
+              className={`calc-btn calc-btn-animated ${/[÷×−+]/.test(k) ? "op" : ""} ${k === "=" ? "eq" : ""}`}
+              style={{ 
+                gridColumn: k === "=" ? "span 2" : "auto",
+                animationDelay: `${idx * 0.03}s` 
+              }}
               onClick={() => handleKeyPress(k)}
             >
               {k}

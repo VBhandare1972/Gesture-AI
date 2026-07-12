@@ -69,6 +69,7 @@ export interface AppContextType {
   parseCommand: (rawText: string, source: string) => void;
   notes: NoteItem[];
   addNote: (title: string, body: string) => void;
+  updateNote: (id: number, title: string, body: string) => void;
   deleteNote: (id: number) => void;
   chatHistory: ChatMessage[];
   isTyping: boolean;
@@ -473,6 +474,17 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     };
     setNotes((prev) => [newNote, ...prev]);
     showToast("Note saved");
+  };
+
+  const updateNote = (id: number, title: string, body: string) => {
+    setNotes((prev) =>
+      prev.map((n) =>
+        n.id === id
+          ? { ...n, title: title || "Untitled", body: body || "(no content)" }
+          : n
+      )
+    );
+    showToast("Note updated");
   };
 
   const deleteNote = (id: number) => {
@@ -1668,6 +1680,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     parseCommand,
     notes,
     addNote,
+    updateNote,
     deleteNote,
     chatHistory,
     isTyping,

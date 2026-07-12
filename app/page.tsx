@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
 import ModuleIcon from "@/components/ModuleIcon";
@@ -56,18 +56,70 @@ export default function DashboardPage() {
     setCmdInput("");
   };
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       handleRunCommand();
     }
   };
 
+  if (!mounted) return null;
+
   const cx = 330;
   const cy = 250;
   const radius = 210;
 
+  const landingStyles = `
+    @keyframes heroEntrance {
+      0% { opacity: 0; transform: translateY(-40px) scale(0.95); filter: blur(10px); }
+      100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+    }
+    @keyframes orbitEntrance {
+      0% { opacity: 0; transform: scale(0.85) translateY(50px); filter: blur(15px); }
+      60% { opacity: 1; transform: scale(1.02) translateY(-5px); filter: blur(0); }
+      100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+    }
+    @keyframes capCardEntrance {
+      0% { opacity: 0; transform: translateY(60px); filter: blur(12px); }
+      70% { opacity: 1; transform: translateY(-5px); filter: blur(0); }
+      100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+    }
+    .home-hero {
+      animation: heroEntrance 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .orbit-wrap {
+      opacity: 0;
+      animation: orbitEntrance 1.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s forwards;
+    }
+    .cap-card.reveal {
+      opacity: 0;
+      animation: capCardEntrance 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    .cap-card.reveal:nth-child(1) { animation-delay: 0.6s; }
+    .cap-card.reveal:nth-child(2) { animation-delay: 0.75s; }
+    .cap-card.reveal:nth-child(3) { animation-delay: 0.9s; }
+    
+    .cap-card {
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    .cap-card:hover {
+      transform: translateY(-8px) scale(1.03) !important;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(254, 208, 187, 0.4) !important;
+    }
+    .cap-card:hover .gest-icon {
+      transform: scale(1.2) translateY(-4px);
+      text-shadow: 0 0 20px rgba(254, 208, 187, 0.8);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+  `;
+
   return (
     <section className="view active" id="view-home">
+      <style>{landingStyles}</style>
       {/* Background Video Animation */}
       <div className="video-bg-wrap">
         <video

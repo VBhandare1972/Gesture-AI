@@ -6,35 +6,48 @@ import { useApp } from "@/context/AppContext";
 export default function GamesPage() {
   const { lastGesture, speak } = useApp();
   const [activeTab, setActiveTab] = useState<"guess" | "hill">("guess");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Guessing game states
   const [targetNumber, setTargetNumber] = useState(() => Math.floor(Math.random() * 10) + 1);
   const [currentGuess, setCurrentGuess] = useState(5);
   const [guessHistory, setGuessHistory] = useState<string[]>([]);
-  const [guessResult, setGuessResult] = useState("Guess a number between 1 and 10! You can use Fist (Rock) to decrease, Paper to increase, or Pinch to submit.");
+  const [guessResult, setGuessResult] = useState("");
   const [guessScore, setGuessScore] = useState({ tries: 0, wins: 0 });
+  const [isScanning, setIsScanning] = useState(false);
 
   const handleGuessSubmit = (guessVal: number) => {
-    setGuessScore((prev) => ({ ...prev, tries: prev.tries + 1 }));
-    if (guessVal === targetNumber) {
-      setGuessResult(`Correct! The number was ${targetNumber}.`);
-      speak(`Excellent! You guessed it right. The number was indeed ${targetNumber}.`);
-      setGuessScore((prev) => ({ ...prev, wins: prev.wins + 1 }));
-      setGuessHistory((prev) => [`Tried ${guessVal} - WON! 🎉`, ...prev]);
-      setTimeout(() => {
-        setTargetNumber(Math.floor(Math.random() * 10) + 1);
-        setCurrentGuess(5);
-        setGuessResult("New number generated! Guess between 1 and 10.");
-      }, 3000);
-    } else if (guessVal < targetNumber) {
-      setGuessResult("Too low! Try a higher number.");
-      speak("Too low.");
-      setGuessHistory((prev) => [`Tried ${guessVal} - Too Low`, ...prev]);
-    } else {
-      setGuessResult("Too high! Try a lower number.");
-      speak("Too high.");
-      setGuessHistory((prev) => [`Tried ${guessVal} - Too High`, ...prev]);
-    }
+    if (isScanning) return;
+    setIsScanning(true);
+    setGuessResult("ANALYZING NEURAL PATTERNS...");
+    
+    setTimeout(() => {
+      setIsScanning(false);
+      setGuessScore((prev) => ({ ...prev, tries: prev.tries + 1 }));
+      if (guessVal === targetNumber) {
+        setGuessResult(`CORRECT. TARGET ACQUIRED: ${targetNumber}`);
+        speak(`Excellent! You guessed it right. The number was indeed ${targetNumber}.`);
+        setGuessScore((prev) => ({ ...prev, wins: prev.wins + 1 }));
+        setGuessHistory((prev) => [`Tried ${guessVal} - WON! 🎉`, ...prev]);
+        setTimeout(() => {
+          setTargetNumber(Math.floor(Math.random() * 10) + 1);
+          setCurrentGuess(5);
+          setGuessResult("NEW TARGET SEQUENCE GENERATED.");
+        }, 3000);
+      } else if (guessVal < targetNumber) {
+        setGuessResult("TOO LOW. UPWARD CALIBRATION REQUIRED.");
+        speak("Too low.");
+        setGuessHistory((prev) => [`Tried ${guessVal} - Too Low`, ...prev]);
+      } else {
+        setGuessResult("TOO HIGH. DOWNWARD CALIBRATION REQUIRED.");
+        speak("Too high.");
+        setGuessHistory((prev) => [`Tried ${guessVal} - Too High`, ...prev]);
+      }
+    }, 1200);
   };
 
   // JARVIS Flight Dashboard Game States
@@ -68,8 +81,6 @@ export default function GamesPage() {
           setLastActionText("BRAKE ENGAGED (FIST)");
         } else if (g.includes("pinch")) {
           setLastActionText("JUMP THRUSTER (PINCH)");
-        } else if (g.includes("peace") || g.includes("two")) {
-          setLastActionText("BOOST ACTIVATED (2 FINGERS)");
         }
       }
       // Handle out-of-game gesture triggers
@@ -89,8 +100,7 @@ export default function GamesPage() {
     carVelY: 0,
     angle: 0,
     distance: 0,
-    fuel: 100,
-    boost: 100
+    fuel: 100
   });
 
   const getTerrainHeight = (x: number) => {
@@ -98,11 +108,11 @@ export default function GamesPage() {
     return 290 + Math.sin(x * 0.004) * 45 + Math.cos(x * 0.012) * 20;
   };
 
-  const handleAction = (action: "gas" | "brake" | "jump" | "boost") => {
+  const handleAction = (action: "gas" | "brake" | "jump") => {
     if (!isPlayingRef.current || isPausedRef.current || gameOverRef.current) return;
     const sim = simRef.current;
     if (action === "gas") {
-      sim.carVelX = Math.min(7.5, sim.carVelX + 0.22);
+      sim.carVelX = Math.min(2.5, sim.carVelX + 0.06);
       sim.fuel = Math.max(0, sim.fuel - 0.18);
     } else if (action === "brake") {
       sim.carVelX = Math.max(0, sim.carVelX - 0.35);
@@ -111,13 +121,6 @@ export default function GamesPage() {
       if (sim.carY >= groundY - 12) {
         sim.carVelY = -7.0;
         triggerJumpBeep();
-      }
-    } else if (action === "boost") {
-      if (sim.boost > 10) {
-        sim.carVelX = Math.min(11, sim.carVelX + 0.55);
-        sim.boost = Math.max(0, sim.boost - 1.2);
-        sim.fuel = Math.max(0, sim.fuel - 0.1);
-        triggerBoostBeep();
       }
     }
   };
@@ -140,26 +143,6 @@ export default function GamesPage() {
       gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
       osc.start(now);
       osc.stop(now + 0.22);
-    } catch (e) {}
-  };
-
-  const triggerBoostBeep = () => {
-    try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = "sawtooth";
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      
-      const now = audioCtx.currentTime;
-      osc.frequency.setValueAtTime(880, now);
-      osc.frequency.linearRampToValueAtTime(1400, now + 0.12);
-      
-      gain.gain.setValueAtTime(0.05, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
-      osc.start(now);
-      osc.stop(now + 0.2);
     } catch (e) {}
   };
 
@@ -213,8 +196,7 @@ export default function GamesPage() {
         carVelY: 0,
         angle: 0,
         distance: 0,
-        fuel: 100,
-        boost: 100
+        fuel: 100
       };
       setGameOver(false);
       setIsPaused(false);
@@ -237,8 +219,7 @@ export default function GamesPage() {
         carVelY: 0,
         angle: 0,
         distance: 0,
-        fuel: 100,
-        boost: 100
+        fuel: 100
       };
       setGameOver(false);
       setIsPaused(false);
@@ -326,8 +307,6 @@ export default function GamesPage() {
             handleAction("brake");
           } else if (activeGesture.includes("pinch")) {
             handleAction("jump");
-          } else if (activeGesture.includes("peace") || activeGesture.includes("two")) {
-            handleAction("boost");
           }
         }
 
@@ -337,8 +316,7 @@ export default function GamesPage() {
         sim.distance += sim.carVelX;
         sim.carY += sim.carVelY;
 
-        // Boost passive restore cycles
-        sim.boost = Math.min(100, sim.boost + 0.12);
+
 
         const groundY = getTerrainHeight(sim.distance + sim.carX);
 
@@ -542,7 +520,6 @@ export default function GamesPage() {
       };
 
       drawHUDGauge(canvas.width - 90, 50, "THRUST", sim.carVelX * 20, 150, "#c0392b");
-      drawHUDGauge(canvas.width - 35, 50, "BOOST", sim.boost, 100, "#5aa50b");
 
       // Vehicle Chassis graphics (Futuristic Iron Man themed Flight Vehicle with Bouncing 3D-Suspension)
       ctx.save();
@@ -693,33 +670,43 @@ export default function GamesPage() {
     };
   }, [activeTab, isPlaying, gameOver]);
 
+  if (!mounted) return null;
+
   return (
     <section className="view active" id="view-games">
-      
+      <div className="view-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "16px" }}>
+        <div>
+          
+          <h1 className="view-title">Games</h1>
+          <div className="view-sub">Play JARVIS mini-games with gesture controls.</div>
+        </div>
 
-      {/* Switch tabs */}
-      <div style={{ display: "flex", gap: "10px", marginBottom: "18px" }}>
-        <button
-          className={`btn ${activeTab === "guess" ? "btn-accent" : "btn-ghost"}`}
-          onClick={() => setActiveTab("guess")}
-        >
-          JARVIS Mind Reader
-        </button>
-        <button
-          className={`btn ${activeTab === "hill" ? "btn-accent" : "btn-ghost"}`}
-          onClick={() => setActiveTab("hill")}
-        >
-          JARVIS Hill Climb
-        </button>
+        {/* Switch tabs */}
+        <div style={{ display: "flex", gap: "10px", marginBottom: "8px" }}>
+          <button
+            className={`btn ${activeTab === "guess" ? "btn-accent" : "btn-ghost"}`}
+            onClick={() => setActiveTab("guess")}
+          >
+            JARVIS Mind Reader
+          </button>
+          <button
+            className={`btn ${activeTab === "hill" ? "btn-accent" : "btn-ghost"}`}
+            onClick={() => setActiveTab("hill")}
+          >
+            JARVIS Hill Climb
+          </button>
+        </div>
       </div>
 
       {activeTab === "guess" ? (
-        <div className="panel brackets game-panel-guess" style={{ padding: "24px", textAlign: "center", position: "relative", overflow: "hidden" }}>
+        <div className="cap-card reveal" style={{ textAlign: "center", margin: "0 auto", maxWidth: "600px" }}>
           <div className="game-hud-bg-matrix"></div>
           <div className="game-hud-scanlines"></div>
-          <h3 style={{ color: "var(--peach)", fontSize: "20px", fontWeight: "700", marginBottom: "8px" }}>
-            JARVIS Mind Reader
-          </h3>
+          
+          
+         
+          
+          <h3>JARVIS Mind Reader</h3>
           <div className="jarvis-scanning-video-wrap">
             <div className="jarvis-video-ring-outer"></div>
             <div className="jarvis-video-ring-inner"></div>
@@ -730,36 +717,44 @@ export default function GamesPage() {
             JARVIS has chosen a number from 1 to 10. Can you guess it?
           </p>
 
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "20px", margin: "24px 0" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "24px", margin: "32px 0" }}>
             <button
               className="btn btn-ghost"
-              style={{ fontSize: "20px", width: "45px", height: "45px", borderRadius: "50%", padding: 0 }}
-              onClick={() => setCurrentGuess((prev) => Math.max(1, prev - 1))}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "50px", height: "50px", borderRadius: "14px", background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)" }}
+              onClick={() => !isScanning && setCurrentGuess((prev) => Math.max(1, prev - 1))}
             >
-              -
+              <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.5" stroke="currentColor" width="24" height="24">
+                <path d="M20 12H4" />
+              </svg>
             </button>
-            <span className="guess-number-display" style={{ fontSize: "48px", fontWeight: "700", color: "#fff", minWidth: "80px" }}>
-              {currentGuess}
-            </span>
+
+            <div style={{ background: "rgba(0,0,0,0.6)", border: "1px solid var(--peach)", borderRadius: "20px", width: "100px", height: "100px", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 20px rgba(254, 208, 187, 0.2)" }}>
+              <span className="guess-number-display" style={{ fontSize: "56px", fontWeight: "700", color: "#fff", transition: "all 0.3s ease", opacity: isScanning ? 0.4 : 1, transform: isScanning ? "scale(0.9)" : "scale(1)", textShadow: "0 0 10px rgba(255,255,255,0.5)" }}>
+                {currentGuess}
+              </span>
+            </div>
+
             <button
               className="btn btn-ghost"
-              style={{ fontSize: "20px", width: "45px", height: "45px", borderRadius: "50%", padding: 0 }}
-              onClick={() => setCurrentGuess((prev) => Math.min(10, prev + 1))}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "50px", height: "50px", borderRadius: "14px", background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.1)" }}
+              onClick={() => !isScanning && setCurrentGuess((prev) => Math.min(10, prev + 1))}
             >
-              +
+              <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.5" stroke="currentColor" width="24" height="24">
+                <path d="M12 4v16M4 12h16" />
+              </svg>
             </button>
           </div>
 
-          <div style={{ color: "var(--peach)", fontSize: "14px", fontWeight: "600", minHeight: "40px", marginBottom: "20px" }}>
+          <div style={{ color: "var(--peach)", fontSize: "14px", fontWeight: "600", minHeight: "40px", marginBottom: "20px", transition: "opacity 0.2s", opacity: isScanning ? 0.7 : 1, animation: isScanning ? "pulse 1s infinite" : "none" }}>
             {guessResult}
           </div>
 
           <button
             className="btn btn-accent"
             onClick={() => handleGuessSubmit(currentGuess)}
-            style={{ padding: "12px 28px", borderRadius: "14px" }}
+            style={{ padding: "14px 32px", borderRadius: "16px", opacity: isScanning ? 0.6 : 1, pointerEvents: isScanning ? "none" : "auto", fontSize: "14px", letterSpacing: "1px" }}
           >
-            Submit Guess
+            {isScanning ? "SCANNING..." : "SUBMIT GUESS"}
           </button>
 
           <div className="rps-score" style={{ marginTop: "24px" }}>
@@ -785,54 +780,113 @@ export default function GamesPage() {
               </ul>
             </div>
           )}
+
+
         </div>
       ) : (
         <div className="panel brackets game-panel-match" style={{ padding: "24px", textAlign: "center", position: "relative", overflow: "hidden" }}>
           <div className="game-hud-bg-matrix"></div>
           <div className="game-hud-scanlines"></div>
           
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-            <h3 style={{ color: "var(--peach)", fontSize: "20px", fontWeight: "700", margin: 0 }}>
-              JARVIS Hill Climb
-            </h3>
-            
-            {/* Real-time HUD stats widget parameters */}
-            <div style={{ display: "flex", gap: "10px" }}>
-              <button className="btn btn-ghost" style={{ padding: "6px 12px", fontSize: "11px" }} onClick={() => handleGameControl(isPaused ? "resume" : "pause")}>
-                {isPaused ? "RESUME" : "PAUSE"}
-              </button>
-              <button className="btn btn-accent" style={{ padding: "6px 12px", fontSize: "11px" }} onClick={() => handleGameControl("restart")}>
-                REBOOT
-              </button>
-            </div>
-          </div>
+          
 
-          {/* Interactive controls and guidance labels above game canvas */}
-          <div style={{ margin: "8px 0 16px 0", background: "rgba(0,0,0,0.2)", borderRadius: "10px", padding: "10px 14px", border: "1px solid rgba(254, 208, 187, 0.05)" }}>
-            <div style={{ fontSize: "12px", color: "var(--txt-mid)", textAlign: "center" }}>
-              <b>DRIVE CONTROLS:</b> ☝️ 1 Finger: Gas · ✌️ 2 Fingers: Boost · ✊ Fist: Brake · 🤏 Pinch: Jump
-            </div>
-          </div>
 
-          {/* Sizable Canvas container overlaying GESTURE.AI project theme */}
-          <div style={{ position: "relative", display: "inline-block", border: "1px solid rgba(254, 208, 187, 0.15)", borderRadius: "16px", overflow: "hidden", background: "#11050e", width: "100%", maxWidth: "600px" }}>
-            <canvas ref={canvasRef} width="600" height="380" style={{ width: "100%", height: "auto", display: "block" }} />
-            {(!isPlaying || gameOver) && (
-              <div style={{ position: "absolute", inset: 0, background: "rgba(17,5,14,0.85)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
-                <div style={{ fontSize: "18px", color: "var(--peach)", fontWeight: "700", marginBottom: "12px", letterSpacing: "1.5px" }}>
-                  {gameOver ? "STABILIZER FAILURE! CRASH DETECTED" : "AWAITING ENGINE REBOOT"}
-                </div>
-                <button className="btn btn-accent" onClick={() => handleGameControl("start")}>
-                  {gameOver ? "REBOOT RUN" : "START FLIGHT RUN"}
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div style={{ marginTop: "16px", textAlign: "right" }}>
-            <button className="btn btn-ghost" style={{ fontSize: "11px", borderRadius: "8px" }} onClick={() => handleGameControl("exit")}>
-              DISCONNECT HUD
+          {/* Game Menu (Top) */}
+          <div style={{ display: "flex", flexDirection: "row", justifyContent: "center", gap: "12px", marginBottom: "16px", flexWrap: "wrap" }}>
+            <button className="btn btn-ghost" style={{ fontSize: "13px", borderRadius: "8px", padding: "12px 20px" }} onClick={() => handleGameControl("restart")}>
+              RESTART
             </button>
+            <button className="btn btn-ghost" style={{ fontSize: "13px", borderRadius: "8px", padding: "12px 20px" }} onClick={() => handleGameControl(isPaused ? "resume" : "pause")}>
+              {isPaused ? "RESUME" : "PAUSE"}
+            </button>
+            <button className="btn btn-accent" style={{ fontSize: "13px", borderRadius: "8px", padding: "12px 20px" }} onClick={() => handleGameControl("exit")}>
+              EXIT GAME
+            </button>
+          </div>
+
+          {/* Flex wrapper for canvas and side buttons */}
+          <div style={{ display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: "24px", flexWrap: "wrap", width: "100%" }}>
+
+            {/* Sizable Canvas container overlaying GESTURE.AI project theme */}
+            <div style={{ position: "relative", display: "inline-block", border: "1px solid rgba(254, 208, 187, 0.15)", borderRadius: "16px", overflow: "hidden", background: "#11050e", width: "100%", maxWidth: "800px", flex: "1 1 800px" }}>
+              <canvas ref={canvasRef} width="800" height="380" style={{ width: "100%", height: "auto", display: "block" }} />
+              {(!isPlaying || gameOver) && (
+                <div style={{ position: "absolute", inset: 0, background: "rgba(17,5,14,0.85)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
+                  <div style={{ fontSize: "18px", color: "var(--peach)", fontWeight: "700", marginBottom: "12px", letterSpacing: "1.5px" }}>
+                    {gameOver ? "CRASH DETECTED!" : "READY TO DRIVE"}
+                  </div>
+                  <button className="btn btn-accent" onClick={() => handleGameControl("start")}>
+                    {gameOver ? "RESTART GAME" : "START GAME"}
+                  </button>
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* Manual Play Controls (Below Canvas) */}
+          <div style={{ display: "flex", justifyContent: "center", padding: "16px 0", width: "100%" }}>
+            <div style={{ display: "flex", flexDirection: "row", gap: "8px", background: "rgba(0,0,0,0.3)", padding: "8px 16px", borderRadius: "12px" }}>
+              <button className="btn btn-ghost" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "10px", borderRadius: "8px", userSelect: "none" }} onPointerDown={() => lastGestureRef.current = "fist"} onPointerUp={() => lastGestureRef.current = ""} onPointerLeave={() => lastGestureRef.current = ""}>
+                <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.5" stroke="currentColor" width="20" height="20">
+                  <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button className="btn btn-ghost" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "10px", borderRadius: "8px", userSelect: "none" }} onPointerDown={() => lastGestureRef.current = "pinch"} onPointerUp={() => lastGestureRef.current = ""} onPointerLeave={() => lastGestureRef.current = ""}>
+                <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.5" stroke="currentColor" width="20" height="20">
+                  <rect x="5" y="5" width="14" height="14" rx="2" ry="2" />
+                </svg>
+              </button>
+              <button className="btn btn-ghost" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "10px", borderRadius: "8px", userSelect: "none" }} onPointerDown={() => lastGestureRef.current = "one"} onPointerUp={() => lastGestureRef.current = ""} onPointerLeave={() => lastGestureRef.current = ""}>
+                <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.5" stroke="currentColor" width="20" height="20">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+
+
+        </div>
+      )}
+
+      {/* Standalone Gesture Info Box */}
+      {activeTab === "hill" && (
+        <div className="cap-card" style={{ marginTop: "24px", maxWidth: "800px", marginLeft: "auto", marginRight: "auto", padding: "20px" }}>
+          <div style={{ fontSize: "11px", color: "var(--txt-faint)", textAlign: "center", marginBottom: "12px", letterSpacing: "2px", fontWeight: "600", textTransform: "uppercase" }}>
+            Gesture Drive Controls
+          </div>
+          <div style={{ fontSize: "12px", color: "var(--txt-mid)", textAlign: "center", marginBottom: "16px", lineHeight: "1.6" }}>
+            Enable your camera and position your hand clearly in frame. <br/>
+            Hold up your hand to the screen and use the following gestures to control the vehicle using AI tracking.
+          </div>
+          <div style={{ display: "flex", justifyContent: "center", gap: "16px", flexWrap: "wrap" }}>
+            <div style={{ background: "rgba(255,255,255,0.03)", padding: "16px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.08)", flex: "1 1 140px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ fontSize: "24px", marginBottom: "8px" }}>☝️</div>
+                <div style={{ fontSize: "12px", color: "var(--txt-mid)", marginBottom: "4px" }}>1 Finger:</div>
+                <b style={{ fontSize: "15px", color: "var(--txt-bright)", textTransform: "uppercase", letterSpacing: "1px", display: "block", marginBottom: "6px" }}>Gas</b>
+              </div>
+              <div style={{ fontSize: "10px", color: "var(--txt-faint)", marginTop: "auto" }}>Accelerate forward</div>
+            </div>
+            
+            <div style={{ background: "rgba(255,255,255,0.03)", padding: "16px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.08)", flex: "1 1 140px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ fontSize: "24px", marginBottom: "8px" }}>✊</div>
+                <div style={{ fontSize: "12px", color: "var(--txt-mid)", marginBottom: "4px" }}>Fist:</div>
+                <b style={{ fontSize: "15px", color: "var(--txt-bright)", textTransform: "uppercase", letterSpacing: "1px", display: "block", marginBottom: "6px" }}>Brake</b>
+              </div>
+              <div style={{ fontSize: "10px", color: "var(--txt-faint)", marginTop: "auto" }}>Slow down</div>
+            </div>
+
+            <div style={{ background: "rgba(255,255,255,0.03)", padding: "16px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.08)", flex: "1 1 140px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div>
+                <div style={{ fontSize: "24px", marginBottom: "8px" }}>🤏</div>
+                <div style={{ fontSize: "12px", color: "var(--txt-mid)", marginBottom: "4px" }}>Pinch:</div>
+                <b style={{ fontSize: "15px", color: "var(--txt-bright)", textTransform: "uppercase", letterSpacing: "1px", display: "block", marginBottom: "6px" }}>Jump</b>
+              </div>
+              <div style={{ fontSize: "10px", color: "var(--txt-faint)", marginTop: "auto" }}>Leap over obstacles</div>
+            </div>
           </div>
         </div>
       )}

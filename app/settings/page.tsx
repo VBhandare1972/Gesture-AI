@@ -4,7 +4,7 @@ import React from "react";
 import { useApp } from "@/context/AppContext";
 
 export default function SettingsPage() {
-  const { settings, setSettings, setStats, showToast } = useApp();
+  const { settings, setSettings, showToast } = useApp();
 
   const handleToggleVoiceOut = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSettings((prev) => ({ ...prev, voiceOut: e.target.checked }));
@@ -22,27 +22,37 @@ export default function SettingsPage() {
     setSettings((prev) => ({ ...prev, continuous: e.target.checked }));
   };
 
-  const handleTheme = (themeName: string) => {
-    setSettings((prev) => ({ ...prev, theme: themeName }));
-    showToast(`Accent set to ${themeName}`);
-  };
-
-  const handleReset = () => {
-    setStats({ commands: 0, drawings: 0 });
-    showToast("Stats reset complete");
-  };
+  const customStyles = `
+    @keyframes guideCardEntrance {
+      0% { opacity: 0; transform: translateY(40px) scale(0.95); filter: blur(5px); }
+      70% { opacity: 1; transform: translateY(-3px) scale(1.02); filter: blur(0); }
+      100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+    }
+    .guide-card-animated {
+      opacity: 0;
+      animation: guideCardEntrance 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    .guide-card-animated:hover {
+      transform: translateY(-5px) scale(1.03);
+      box-shadow: 0 15px 35px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(254, 208, 187, 0.4);
+      z-index: 10;
+    }
+    .guide-card-animated:hover .gest-icon {
+      transform: scale(1.2) rotate(5deg);
+      text-shadow: 0 0 20px rgba(254, 208, 187, 0.6);
+    }
+    .gest-icon {
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+  `;
 
   return (
     <section className="view active" id="view-settings">
+      <style>{customStyles}</style>
       <div className="view-head">
         <div>
-          <div className="eyebrow">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>{" "}
-            Module 08
-          </div>
+          
           <h1 className="view-title">Settings</h1>
           <div className="view-sub">Tune how the HUD listens, watches, and looks.</div>
         </div>
@@ -109,96 +119,55 @@ export default function SettingsPage() {
           </label>
         </div>
 
-        <div className="panel setting-row">
-          <div className="s-info">
-            <div className="s-title">HUD accent color</div>
-            <div className="s-sub">Reactor color theme.</div>
+
+
+        <div style={{ marginTop: "48px", marginBottom: "24px" }}>
+          <div className="s-title" style={{ marginBottom: "24px", textAlign: "center", fontSize: "14px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--txt-faint)" }}>
+            Gesture Navigation Guide
           </div>
-          <div className="theme-dots">
-            <div
-              className={`theme-dot ${settings.theme === "cream" ? "active" : ""}`}
-              data-theme="cream"
-              style={{ background: "#D92B2B" }}
-              onClick={() => handleTheme("cream")}
-            ></div>
-            <div
-              className={`theme-dot ${settings.theme === "mauve" ? "active" : ""}`}
-              data-theme="mauve"
-              style={{ background: "#C0392B" }}
-              onClick={() => handleTheme("mauve")}
-            ></div>
-            <div
-              className={`theme-dot ${settings.theme === "wine" ? "active" : ""}`}
-              data-theme="wine"
-              style={{ background: "#E74C3C" }}
-              onClick={() => handleTheme("wine")}
-            ></div>
+          <div className="capability-grid">
+            
+            <div className="cap-card guide-card-animated" style={{ animationDelay: "0.1s" }}>
+              <div className="gest-icon" style={{ fontSize: "28px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                ☝️
+              </div>
+              <span className="tag">GESTURE</span>
+              <h3>1 Finger</h3>
+              <p>Point index finger to move cursor.</p>
+            </div>
+
+            <div className="cap-card guide-card-animated" style={{ animationDelay: "0.2s" }}>
+              <div className="gest-icon" style={{ fontSize: "28px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                🤏
+              </div>
+              <span className="tag">GESTURE</span>
+              <h3>Pinch</h3>
+              <p>Thumb + index to click or draw.</p>
+            </div>
+
+            <div className="cap-card guide-card-animated" style={{ animationDelay: "0.3s" }}>
+              <div className="gest-icon" style={{ fontSize: "28px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                🖐️
+              </div>
+              <span className="tag">GESTURE</span>
+              <h3>Open Palm</h3>
+              <p>Hold for 0.8s to jump home.</p>
+            </div>
+
+            <div className="cap-card guide-card-animated" style={{ animationDelay: "0.4s" }}>
+              <div className="gest-icon" style={{ fontSize: "28px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                ✌️
+              </div>
+              <span className="tag">GESTURE</span>
+              <h3>Peace Sign</h3>
+              <p>Hold for 0.8s for next module.</p>
+            </div>
+
           </div>
         </div>
 
-        <div className="panel" style={{ padding: "18px" }}>
-          <div className="s-title" style={{ marginBottom: "10px" }}>
-            Gesture Guide
-          </div>
-          <div className="gesture-guide mono">
-            <div className="gg-row">
-              <span className="gg-icon">
-                <svg viewBox="0 0 24 24">
-                  <path d="M9 11l3 3L22 4" />
-                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-                </svg>
-              </span>
-              Point index finger to move cursor
-            </div>
-            <div className="gg-row">
-              <span className="gg-icon">
-                <svg viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-              </span>
-              Pinch thumb + index to click or draw
-            </div>
-            <div className="gg-row">
-              <span className="gg-icon">
-                <svg viewBox="0 0 24 24">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                </svg>
-              </span>
-              Open palm held 0.8s — jump home
-            </div>
-            <div className="gg-row">
-              <span className="gg-icon">
-                <svg viewBox="0 0 24 24">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </span>
-              Peace sign held 0.8s — next module
-            </div>
-          </div>
-        </div>
 
-        <div className="panel setting-row">
-          <div className="s-info">
-            <div className="s-title">Reset session stats</div>
-            <div className="s-sub">Clears command, note and stroke counters.</div>
-          </div>
-          <button className="btn btn-ghost btn-sm" id="resetStatsBtn" onClick={handleReset}>
-            Reset
-          </button>
-        </div>
-
-        <div className="panel" style={{ padding: "18px" }}>
-          <div className="s-title" style={{ marginBottom: "6px" }}>
-            About
-          </div>
-          <div className="s-sub">
-            GESTURE.AI is a self-contained holographic dashboard — voice via Web Speech API, hand tracking via
-            on-device MediaPipe Hands, weather via Open-Meteo. Nothing leaves your browser except chat messages sent to
-            the assistant.
-          </div>
-        </div>
+        
       </div>
     </section>
   );
