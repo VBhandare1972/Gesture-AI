@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
 import ModuleIcon from "@/components/ModuleIcon";
 
 const MODULES = [
@@ -47,6 +48,9 @@ export default function DashboardPage() {
     pauseMusic,
     setChatOpen
   } = useApp();
+
+  const { user } = useAuth();
+  const firstName = user?.displayName ? user.displayName.split(" ")[0].toUpperCase() : "USER";
 
   const [cmdInput, setCmdInput] = useState("");
 
@@ -151,7 +155,7 @@ export default function DashboardPage() {
 
       <div className="home-hero">
         <div className="home-greet" id="homeGreet">
-          {getGreeting()} <b>USER</b>
+          {getGreeting()} <b>{firstName}</b>
         </div>
         <div className="home-date" id="homeDate">
           {currentDate || "—"}

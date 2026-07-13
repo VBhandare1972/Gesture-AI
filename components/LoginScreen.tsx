@@ -555,7 +555,8 @@ export default function LoginScreen() {
               <div className="input-wrapper">
                 <input 
                   type="text" 
-                  placeholder=" " 
+                  placeholder=" "
+                  autoComplete="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   disabled={loading}
@@ -567,7 +568,8 @@ export default function LoginScreen() {
             <div className="input-wrapper">
               <input 
                 type="email" 
-                placeholder=" " 
+                placeholder=" "
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
@@ -577,8 +579,9 @@ export default function LoginScreen() {
 
             <div className="input-wrapper">
               <input 
-                type={showPassword ? "text" : "password"} 
-                placeholder=" " 
+                type={showPassword ? "text" : "password"}
+                placeholder=" "
+                autoComplete={isLogin ? "current-password" : "new-password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
@@ -602,7 +605,8 @@ export default function LoginScreen() {
               <div className="input-wrapper">
                 <input 
                   type={showConfirmPassword ? "text" : "password"} 
-                  placeholder=" " 
+                  placeholder=" "
+                  autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   disabled={loading}
