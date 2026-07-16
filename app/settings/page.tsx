@@ -334,7 +334,7 @@ export default function SettingsPage() {
         <div className="panel setting-row">
           <div className="s-info">
             <div className="s-title">Gesture sensitivity</div>
-            <div className="s-sub">Controls pinch threshold, smoothing, swipe speed, scroll rate, hover dwell, and confirmation frames simultaneously.</div>
+            <div className="s-sub">Controls pinch threshold, smoothing, swipe speed, scroll rate, and confirmation frames simultaneously.</div>
           </div>
           <input
             type="range"
@@ -462,8 +462,7 @@ export default function SettingsPage() {
             <span className="gesture-badge badge-dwell">DWELL</span>
           </div>
 
-          {/* Scroll & Zoom */}
-          <div className="gesture-category-label" style={{ animationDelay: "0.57s", marginTop: "16px" }}>Scroll &amp; Zoom</div>
+          <div className="gesture-category-label" style={{ animationDelay: "0.57s", marginTop: "16px" }}>Scroll</div>
 
           <div className="gesture-list-item" style={{ animationDelay: "0.60s" }}>
             <div className="gesture-emoji">✊</div>
@@ -492,24 +491,6 @@ export default function SettingsPage() {
             <span className="gesture-badge badge-swipe">SWIPE</span>
           </div>
 
-          <div className="gesture-list-item" style={{ animationDelay: "0.72s" }}>
-            <div className="gesture-emoji">👍</div>
-            <div className="gesture-info">
-              <div className="gesture-name">Thumbs Up</div>
-              <div className="gesture-desc">Thumb pointing up, others closed &mdash; zoom in (up to 2x)</div>
-            </div>
-            <span className="gesture-badge badge-zoom">ZOOM IN</span>
-          </div>
-
-          <div className="gesture-list-item" style={{ animationDelay: "0.76s" }}>
-            <div className="gesture-emoji">👎</div>
-            <div className="gesture-info">
-              <div className="gesture-name">Thumbs Down</div>
-              <div className="gesture-desc">Thumb pointing down, others closed &mdash; zoom out (down to 0.5x)</div>
-            </div>
-            <span className="gesture-badge badge-zoom">ZOOM OUT</span>
-          </div>
-
           {/* Shortcuts */}
           <div className="gesture-category-label" style={{ animationDelay: "0.80s", marginTop: "16px" }}>Shortcuts</div>
 
@@ -524,7 +505,7 @@ export default function SettingsPage() {
 
           {/* Sensitivity tip */}
           <div style={{ background: "rgba(178,58,72,0.06)", border: "1px solid rgba(178,58,72,0.18)", borderRadius: "12px", padding: "16px 20px", marginTop: "24px", opacity: 0, animation: "fadeInUp 0.5s ease 0.9s forwards" }}>
-            <div style={{ fontSize: "10px", textTransform: "uppercase", letterSpacing: "2px", color: "var(--red)", marginBottom: "8px" }}>Sensitivity Slider Controls 6 Parameters</div>
+            <div style={{ fontSize: "10px", textTransform: "uppercase", letterSpacing: "2px", color: "var(--red)", marginBottom: "8px" }}>Sensitivity Slider Controls 5 Parameters</div>
             <div style={{ fontSize: "12px", color: "rgba(254,208,187,0.6)", lineHeight: "1.7" }}>
               Pinch threshold &bull; EMA smoothing &bull; Confirmation frames &bull; Swipe velocity &bull; Scroll speed &bull; Hover dwell time.
               <br/><span style={{ color: "rgba(254,208,187,0.4)" }}>Low = deliberate &nbsp;&bull;&nbsp; High = fast &amp; reactive</span>

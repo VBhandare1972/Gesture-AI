@@ -31,8 +31,6 @@ const GESTURE_LABELS: Record<string, string> = {
   peace:        "Peace -- Next Page",
   open_palm:    "Open Palm -- Home",
   fist:         "Fist -- Scroll",
-  thumbs_up:    "Thumbs Up -- Zoom In",
-  thumbs_down:  "Thumbs Down -- Zoom Out",
   three_fingers:"Three Fingers -- Chat",
   swipe_left:   "Swipe Left -- Back",
   swipe_right:  "Swipe Right -- Forward",
@@ -52,8 +50,6 @@ const COOLDOWNS: Record<string, number> = {
   scroll:         80,
   navigate_home: 1200,
   navigate_next: 1000,
-  zoom_in:        600,
-  zoom_out:       600,
   open_chat:     1500,
 };
 
@@ -242,8 +238,6 @@ export function useGestureEngine(
 
     let rawGesture = "other";
     if (pinching)                                           rawGesture = "pinch";
-    else if (thumbUp)                                       rawGesture = "thumbs_up";
-    else if (thumbDown)                                     rawGesture = "thumbs_down";
     else if (indexExt && middleExt && ringExt && !pinkyExt) rawGesture = "three_fingers";
     else if (indexExt && !middleExt && !ringExt && !pinkyExt) rawGesture = "point";
     else if (indexExt && middleExt && !ringExt && !pinkyExt)  rawGesture = "peace";
@@ -340,21 +334,7 @@ export function useGestureEngine(
       addRecentGesture("three_fingers");
     }
 
-    // Zoom
-    if (rawGesture === "thumbs_up" && canTrigger("zoom_in")) {
-      markTriggered("zoom_in");
-      const cur = parseFloat(document.body.style.zoom || "1");
-      document.body.style.zoom = String(Math.min(cur + 0.1, 2.0));
-      showToastRef.current("Gesture: Zoom In");
-      addRecentGesture("thumbs_up");
-    }
-    if (rawGesture === "thumbs_down" && canTrigger("zoom_out")) {
-      markTriggered("zoom_out");
-      const cur = parseFloat(document.body.style.zoom || "1");
-      document.body.style.zoom = String(Math.max(cur - 0.1, 0.5));
-      showToastRef.current("Gesture: Zoom Out");
-      addRecentGesture("thumbs_down");
-    }
+
 
     // Fist scroll
     if (rawGesture === "fist" && canTrigger("scroll")) {
