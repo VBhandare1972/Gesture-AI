@@ -4081,11 +4081,11 @@ main {
   right: 16px;
   z-index: 600;
   width: 210px;
-  background: rgba(255, 240, 243, 0.98); /* soft baby pink background */
-  border: 1px solid #ffccd5; /* matching pink border */
+  background: #ffffff; /* Crisp pure white base */
+  border: 2px solid #ffb6c1; /* Thicker pastel pink border */
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 10px 36px rgba(255, 182, 193, 0.35), 0 0 15px rgba(255, 240, 243, 0.2);
+  box-shadow: 0 10px 30px rgba(255, 182, 193, 0.45);
 }
 
 .gesture-hud.minimized .gesture-video-wrap {
@@ -4102,21 +4102,28 @@ main {
   justify-content: space-between;
   padding: 8px 10px;
   font-family: var(--fM);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 1px;
-  color: #c9184a; /* high contrast deep magenta/pink text */
+  color: #a30029; /* High-contrast deep crimson */
   border-bottom: 1px solid #ffccd5;
   cursor: grab;
-  background: #ffccd5; /* baby pink header */
+  background: #ffe5ec; /* Soft pink header background */
+  font-weight: 700;
 }
 
 .gesture-hud-header button {
   background: none;
   border: none;
-  color: #590d22; /* dark pink button text */
+  color: #a30029;
   font-size: 13px;
   padding: 2px 6px;
   cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.gesture-hud-header button:hover {
+  opacity: 1;
 }
 
 .gesture-video-wrap {
@@ -4146,27 +4153,31 @@ main {
 
 .gesture-label {
   position: absolute;
-  bottom: 5px;
-  left: 5px;
-  right: 5px;
+  bottom: 6px;
+  left: 6px;
+  right: 6px;
   text-align: center;
   font-family: var(--fM);
-  font-size: 10px;
-  color: #ff4d6d; /* high-contrast rose text */
-  background: rgba(255, 240, 243, 0.9);
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff; /* Bright white text */
+  background: #b23a48; /* Solid deep red background for maximum readability */
   border: 1px solid #ffccd5;
   border-radius: 6px;
-  padding: 3px;
-  letter-spacing: .4px;
+  padding: 5px;
+  letter-spacing: .5px;
+  box-shadow: 0 4px 10px rgba(178, 58, 72, 0.35);
 }
 
 .gesture-foot {
   font-size: 9px;
-  color: #800f2f; /* dark rose/magenta footer text */
+  color: #590d22; /* Darker pink for strong text visibility */
   text-align: center;
-  padding: 5px;
+  padding: 6px;
   font-family: var(--fM);
   border-top: 1px solid #ffccd5;
+  background: #fff0f3;
+  font-weight: 600;
 }
 
 @media(max-width: 600px) {

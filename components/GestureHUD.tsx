@@ -11,6 +11,8 @@ export default function GestureHUD() {
     gestureLabel,
     gestureCursor,
     ripples,
+    gestureConfidencePct,
+    recentGestures,
     enableGestureCamera,
     disableGestureCamera,
     stopCameraOnly
@@ -82,6 +84,8 @@ export default function GestureHUD() {
     hudStyle.bottom = "auto";
   }
 
+  const confColor = gestureConfidencePct >= 100 ? "#4ade80" : gestureConfidencePct >= 50 ? "#fed0bb" : "#b23a48";
+
   // Render overlay elements
   return (
     <>
@@ -109,7 +113,37 @@ export default function GestureHUD() {
         <div className="gesture-label mono" id="gestureLabel" style={{ position: "static", borderRadius: 0 }}>
           {gestureLabel}
         </div>
-        <div className="gesture-foot">Point to aim · Pinch to select</div>
+
+        {/* Confidence Bar */}
+        <div style={{ padding: "6px 10px 4px", background: "#f8f9fa", borderBottom: "1px solid #ffccd5" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+            <span style={{ fontSize: "9px", color: "#590d22", textTransform: "uppercase", letterSpacing: "1px", fontWeight: "bold" }}>Confidence</span>
+            <span style={{ fontSize: "9px", color: gestureConfidencePct >= 100 ? "#2b9348" : gestureConfidencePct >= 50 ? "#c9184a" : "#800f2f", fontWeight: 700 }}>{gestureConfidencePct}%</span>
+          </div>
+          <div style={{ height: "4px", background: "#ffe5ec", borderRadius: "2px", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${gestureConfidencePct}%`, background: gestureConfidencePct >= 100 ? "#2b9348" : gestureConfidencePct >= 50 ? "#ff4d6d" : "#ff7096", borderRadius: "2px", transition: "width 0.1s ease" }} />
+          </div>
+        </div>
+
+        {/* Recent Gesture History Strip */}
+        {recentGestures.length > 0 && (
+          <div style={{ padding: "6px 8px", display: "flex", gap: "4px", flexWrap: "wrap", background: "#ffffff", borderBottom: "1px solid #ffccd5" }}>
+            {recentGestures.map((g, i) => (
+              <span key={i} style={{
+                fontSize: "8px", padding: "2px 6px", borderRadius: "8px",
+                background: "#ffe5ec", border: "1px solid #ffb6c1",
+                color: "#c9184a", opacity: 1 - i * 0.25,
+                fontWeight: "bold",
+                whiteSpace: "nowrap", maxWidth: "90px",
+                overflow: "hidden", textOverflow: "ellipsis"
+              }}>
+                {g}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="gesture-foot">Pinch · Swipe · Palm · Fist · Peace</div>
       </div>
 
       {/* FLOATING CUSTOM CURSOR */}

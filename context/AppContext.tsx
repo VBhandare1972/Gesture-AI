@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "./AuthContext";
+import { useGestureEngine } from "./GestureEngine";
 
 export interface Track {
   name: string;
@@ -186,6 +187,8 @@ export interface AppContextType {
   gestureLabel: string;
   gestureCursor: { x: number; y: number; show: boolean; pinched: boolean };
   ripples: Array<{ id: number; x: number; y: number }>;
+  gestureConfidencePct: number;
+  recentGestures: string[];
   enableGestureCamera: (videoEl: HTMLVideoElement, canvasEl: HTMLCanvasElement) => Promise<void>;
   disableGestureCamera: () => void;
   stopCameraOnly: () => void;
@@ -359,13 +362,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const cachedVoicesRef = useRef<SpeechSynthesisVoice[]>([]);
 
   const [gestureHUDMinimized, setGestureHUDMinimized] = useState(false);
-  const [gestureLabel, setGestureLabel] = useState("No hand detected");
-  const [gestureCursor, setGestureCursor] = useState({ x: 0, y: 0, show: false, pinched: false });
-  const [ripples, setRipples] = useState<Array<{ id: number; x: number; y: number }>>([]);
-  const palmStartRef = useRef<number | null>(null);
-  const peaceStartRef = useRef<number | null>(null);
-  const cameraRef = useRef<any>(null);
-  const handsRef = useRef<any>(null);
   const pathnameRef = useRef(pathname);
   useEffect(() => {
     pathnameRef.current = pathname;
@@ -1170,7 +1166,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   };
 
   const gestureToRPS = () => {
-    const g = (lastGesture || "").toLowerCase();
+    const g = (gestureEngine.lastGesture || "").toLowerCase();
     if (g.includes("fist")) return "rock";
     if (g.includes("open palm") || g.includes("paper")) return "paper";
     if (g.includes("peace") || g.includes("scissors")) return "scissors";
@@ -1453,224 +1449,21 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const loadScript = (src: string): Promise<void> => {
-    return new Promise<void>((resolve, reject) => {
-      if (typeof document === "undefined") {
-        reject("No document");
-        return;
-      }
-      if (document.querySelector(`script[src="${src}"]`)) {
-        resolve();
-        return;
-      }
-      const s = document.createElement("script");
-      s.src = src;
-      s.crossOrigin = "anonymous";
-      s.onload = () => resolve();
-      s.onerror = () => reject(new Error("Failed to load script: " + src));
-      document.body.appendChild(s);
-    });
-  };
 
-  const loadMediapipe = async () => {
-    if ((window as any).Hands && (window as any).Camera && (window as any).drawConnectors) return;
-    await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js");
-    await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js");
-    await loadScript("https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js");
-  };
-
-  const enableGestureCamera = async (videoEl: HTMLVideoElement, canvasEl: HTMLCanvasElement) => {
-    try {
-      await loadMediapipe();
-      if (!(window as any).Hands || !(window as any).Camera) {
-        showToast("MediaPipe failed to load properly");
-        return;
-      }
-
-      const hands = new (window as any).Hands({
-        locateFile: (f: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`,
-      });
-
-      hands.setOptions({
-        maxNumHands: 1,
-        modelComplexity: 0,
-        minDetectionConfidence: 0.6,
-        minTrackingConfidence: 0.6,
-      });
-
-      hands.onResults((results: any) => onHandResults(results, canvasEl));
-
-      const camera = new (window as any).Camera(videoEl, {
-        onFrame: async () => {
-          if (videoEl) await hands.send({ image: videoEl });
-        },
-        width: 320,
-        height: 240,
-      });
-
-      await camera.start();
-      cameraRef.current = camera;
-      handsRef.current = hands;
-
-      setSettings((prev) => ({ ...prev, gesture: true }));
-      showToast("Gesture camera online");
-    } catch (err) {
-      console.error(err);
-      showToast("Camera unavailable — check permissions");
-      setSettings((prev) => ({ ...prev, gesture: false }));
-    }
-  };
-
-  const stopCameraOnly = () => {
-    if (cameraRef.current) {
-      try { cameraRef.current.stop(); } catch (e) {}
-      cameraRef.current = null;
-    }
-    handsRef.current = null;
-    setGestureCursor((prev) => ({ ...prev, show: false }));
-  };
-
-  const disableGestureCamera = () => {
-    stopCameraOnly();
-    setSettings((prev) => {
-      if (!prev.gesture) return prev;
-      return { ...prev, gesture: false };
-    });
-  };
-
-  const onHandResults = (results: any, canvasEl: HTMLCanvasElement) => {
-    if (!canvasEl) return;
-    if (canvasEl.width !== canvasEl.clientWidth) {
-      canvasEl.width = canvasEl.clientWidth || 220;
-      canvasEl.height = canvasEl.clientHeight || 165;
-    }
-    const ctx = canvasEl.getContext("2d");
-    if (!ctx) return;
-    ctx.save();
-    ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
-
-    if (results.multiHandLandmarks && results.multiHandLandmarks.length) {
-      const lm = results.multiHandLandmarks[0];
-      try {
-        if ((window as any).drawConnectors) {
-          (window as any).drawConnectors(ctx, lm, (window as any).HAND_CONNECTIONS, { color: "#b23a48", lineWidth: 2 });
-        }
-        if ((window as any).drawLandmarks) {
-          (window as any).drawLandmarks(ctx, lm, { color: "#fed0bb", lineWidth: 1, radius: 2.2 });
-        }
-      } catch (e) {}
-
-      const wrist = lm[0];
-      const extended = (tip: number, pip: number) =>
-        Math.hypot(lm[tip].x - wrist.x, lm[tip].y - wrist.y) > Math.hypot(lm[pip].x - wrist.x, lm[pip].y - wrist.y) * 1.1;
-      const indexExt = extended(8, 6);
-      const middleExt = extended(12, 10);
-      const ringExt = extended(16, 14);
-      const pinkyExt = extended(20, 18);
-      const thumbExt = Math.hypot(lm[4].x - lm[17].x, lm[4].y - lm[17].y) > Math.hypot(lm[2].x - lm[17].x, lm[2].y - lm[17].y) * 1.05;
-
-      const extCount = [thumbExt, indexExt, middleExt, ringExt, pinkyExt].filter(Boolean).length;
-      const pinchDist = Math.hypot(lm[4].x - lm[8].x, lm[4].y - lm[8].y);
-      const threshold = 0.03 + (settings.sensitivity / 10) * 0.05;
-      const pinching = pinchDist < threshold;
-
-      let gesture = "other";
-      if (pinching) gesture = "pinch";
-      else if (indexExt && !middleExt && !ringExt && !pinkyExt) gesture = "point";
-      else if (indexExt && middleExt && !ringExt && !pinkyExt) gesture = "peace";
-      else if (extCount >= 4) gesture = "open_palm";
-      else if (extCount <= 1 && !indexExt) gesture = "fist";
-
-      const GESTURE_LABELS: Record<string, string> = {
-        pinch: "Pinch — Select", point: "Pointing", peace: "Peace — Next",
-        open_palm: "Open Palm — Home", fist: "Fist", other: "Tracking...",
-      };
-
-      setGestureLabel(GESTURE_LABELS[gesture] || "Tracking...");
-
-      const vx = (1 - lm[8].x) * window.innerWidth;
-      const vy = lm[8].y * window.innerHeight;
-
-      setGestureCursor({ x: vx, y: vy, show: true, pinched: pinching });
-
-      const currentPath = pathnameRef.current;
-      if (currentPath === "/draw") {
-        window.dispatchEvent(new CustomEvent("gesture-draw", { detail: { x: vx, y: vy, pinching } }));
-      } else {
-        if (pinching) {
-          window.dispatchEvent(new CustomEvent("gesture-click", { detail: { x: vx, y: vy } }));
-        }
-      }
-
-      const now = Date.now();
-      if (gesture === "open_palm") {
-        if (!palmStartRef.current) palmStartRef.current = now;
-        if (now - palmStartRef.current > 800) {
-          if (currentPath !== "/") {
-            router.push("/");
-            showToast("Gesture: Home");
-          }
-          palmStartRef.current = Infinity;
-        }
-      } else {
-        palmStartRef.current = null;
-      }
-
-      if (gesture === "peace") {
-        if (!peaceStartRef.current) peaceStartRef.current = now;
-        if (now - peaceStartRef.current > 400) {
-          const VIEW_ORDER = ["/", "/draw", "/music", "/weather", "/games", "/notes", "/calc", "/settings"];
-          const i = VIEW_ORDER.indexOf(currentPath);
-          const next = VIEW_ORDER[(i + 1) % VIEW_ORDER.length];
-          router.push(next);
-          showToast("Gesture: Next module");
-          peaceStartRef.current = Infinity;
-        }
-      } else {
-        peaceStartRef.current = null;
-      }
-    } else {
-      setGestureLabel("No hand detected");
-      setGestureCursor((prev) => ({ ...prev, show: false }));
-      if (pathnameRef.current === "/draw") {
-        window.dispatchEvent(new CustomEvent("gesture-draw-end"));
-      }
-    }
-    ctx.restore();
-  };
-
-  const spawnRipple = (x: number, y: number) => {
-    const id = Date.now();
-    setRipples((prev) => [...prev, { id, x, y }]);
-    setTimeout(() => {
-      setRipples((prev) => prev.filter((r) => r.id !== id));
-    }, 550);
-  };
-
-  useEffect(() => {
-    let lastClickTime = 0;
-    const handleGestureClick = (e: any) => {
-      const { x, y } = e.detail;
-      const now = Date.now();
-      if (now - lastClickTime < 800) return;
-      lastClickTime = now;
-
-      spawnRipple(x, y);
-      if (typeof document !== "undefined") {
-        const el = document.elementFromPoint(x, y) as HTMLElement | null;
-        if (el && typeof el.click === "function") {
-          el.click();
-        }
-      }
-    };
-    window.addEventListener("gesture-click", handleGestureClick);
-    return () => window.removeEventListener("gesture-click", handleGestureClick);
-  }, []);
+  // ── Gesture Engine ──────────────────────────────────────────────────────
+  const gestureEngine = useGestureEngine(
+    settings.sensitivity,
+    pathname,
+    showToast,
+    nextTrack,
+    prevTrack,
+    setChatOpen,
+  );
 
   const [lastGesture, setLastGesture] = useState<string | null>(null);
   useEffect(() => {
-    setLastGesture(gestureLabel);
-  }, [gestureLabel]);
+    setLastGesture(gestureEngine.lastGesture);
+  }, [gestureEngine.lastGesture]);
 
   const value: AppContextType = {
     booting,
@@ -1723,12 +1516,14 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     speak,
     gestureHUDMinimized,
     setGestureHUDMinimized,
-    gestureLabel,
-    gestureCursor,
-    ripples,
-    enableGestureCamera,
-    disableGestureCamera,
-    stopCameraOnly,
+    gestureLabel: gestureEngine.gestureLabel,
+    gestureCursor: gestureEngine.gestureCursor,
+    ripples: gestureEngine.ripples,
+    gestureConfidencePct: gestureEngine.gestureConfidencePct,
+    recentGestures: gestureEngine.recentGestures,
+    enableGestureCamera: gestureEngine.enableGestureCamera,
+    disableGestureCamera: gestureEngine.disableGestureCamera,
+    stopCameraOnly: gestureEngine.stopCameraOnly,
     lastGesture,
     chatOpen,
     setChatOpen,

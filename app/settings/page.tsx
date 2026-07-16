@@ -44,6 +44,18 @@ export default function SettingsPage() {
       70% { opacity: 1; transform: translateY(-3px) scale(1.02); filter: blur(0); }
       100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
     }
+    @keyframes slideInLeft {
+      0% { opacity: 0; transform: translateX(-24px); }
+      100% { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes fadeInUp {
+      0% { opacity: 0; transform: translateY(16px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 6px rgba(178,58,72,0.3); }
+      50% { box-shadow: 0 0 14px rgba(178,58,72,0.7), 0 0 24px rgba(178,58,72,0.3); }
+    }
     .guide-card-animated {
       opacity: 0;
       animation: guideCardEntrance 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
@@ -54,10 +66,97 @@ export default function SettingsPage() {
       box-shadow: 0 15px 35px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(254, 208, 187, 0.4);
       z-index: 10;
     }
-    .guide-card-animated:hover .gest-icon {
-      transform: scale(1.2) rotate(5deg);
-      text-shadow: 0 0 20px rgba(254, 208, 187, 0.6);
+    .gesture-section {
+      opacity: 0;
+      animation: fadeInUp 0.5s ease forwards;
+      margin-bottom: 8px;
     }
+    .gesture-category-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 6px;
+      padding: 10px 0 6px;
+    }
+    .gesture-category-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, rgba(178,58,72,0.4), transparent);
+    }
+    .gesture-list-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: rgba(20, 10, 15, 0.6);
+      border: 1px solid rgba(254, 208, 187, 0.15);
+      margin-bottom: 8px;
+      opacity: 0;
+      animation: slideInLeft 0.4s ease forwards;
+      transition: all 0.25s ease;
+      cursor: default;
+    }
+    .gesture-list-item:hover {
+      background: rgba(178, 58, 72, 0.15);
+      border-color: rgba(254, 208, 187, 0.4);
+      transform: translateX(6px);
+      box-shadow: 0 4px 15px rgba(178, 58, 72, 0.2);
+    }
+    .gesture-list-item:hover .gesture-emoji {
+      transform: scale(1.1) rotate(-3deg);
+      background: rgba(178, 58, 72, 0.3);
+    }
+    .gesture-emoji {
+      font-size: 24px;
+      width: 46px;
+      height: 46px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      border: 1px solid rgba(254, 208, 187, 0.2);
+      flex-shrink: 0;
+      transition: all 0.25s ease;
+    }
+    .gesture-info { flex: 1; min-width: 0; }
+    .gesture-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.5px;
+      margin-bottom: 3px;
+    }
+    .gesture-desc {
+      font-size: 12.5px;
+      color: rgba(255, 255, 255, 0.8);
+      line-height: 1.45;
+    }
+    .gesture-badge {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 20px;
+      flex-shrink: 0;
+      animation: glowPulse 2.5s ease-in-out infinite;
+    }
+    .badge-hold { background: rgba(178,58,72,0.2); color: #e07080; border: 1px solid rgba(178,58,72,0.35); }
+    .badge-swipe { background: rgba(80,120,220,0.15); color: #80aaee; border: 1px solid rgba(80,120,220,0.3); }
+    .badge-pinch { background: rgba(100,180,80,0.12); color: #80cc70; border: 1px solid rgba(100,180,80,0.25); }
+    .badge-double { background: rgba(200,150,30,0.15); color: #e0b850; border: 1px solid rgba(200,150,30,0.3); }
+    .badge-drag { background: rgba(160,80,200,0.15); color: #cc90ee; border: 1px solid rgba(160,80,200,0.3); }
+    .badge-dwell { background: rgba(30,180,200,0.12); color: #60d0e0; border: 1px solid rgba(30,180,200,0.25); }
+    .badge-move { background: rgba(220,120,40,0.15); color: #e09050; border: 1px solid rgba(220,120,40,0.3); }
+    .badge-zoom { background: rgba(40,200,120,0.12); color: #50e090; border: 1px solid rgba(40,200,120,0.25); }
+    .badge-chat { background: rgba(220,80,160,0.12); color: #e070c0; border: 1px solid rgba(220,80,160,0.25); }
     .gest-icon {
       transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
@@ -235,7 +334,7 @@ export default function SettingsPage() {
         <div className="panel setting-row">
           <div className="s-info">
             <div className="s-title">Gesture sensitivity</div>
-            <div className="s-sub">How close fingers must pinch to trigger a select.</div>
+            <div className="s-sub">Controls pinch threshold, smoothing, swipe speed, scroll rate, hover dwell, and confirmation frames simultaneously.</div>
           </div>
           <input
             type="range"
@@ -268,49 +367,170 @@ export default function SettingsPage() {
 
 
 
-        <div style={{ marginTop: "48px", marginBottom: "24px" }}>
-          <div className="s-title" style={{ marginBottom: "24px", textAlign: "center", fontSize: "14px", letterSpacing: "2px", textTransform: "uppercase", color: "var(--txt-faint)" }}>
-            Gesture Navigation Guide
+        <div className="gesture-section" style={{ marginTop: "48px", marginBottom: "24px", animationDelay: "0.1s" }}>
+
+          {/* Header */}
+          <div style={{ textAlign: "center", marginBottom: "28px" }}>
+            <div style={{ fontSize: "14px", letterSpacing: "3px", textTransform: "uppercase", color: "var(--txt-faint)", marginBottom: "6px" }}>Gesture Control Reference</div>
+            <div style={{ fontSize: "11px", color: "rgba(254,208,187,0.35)", letterSpacing: "1px" }}>Enable camera above &middot; Green confidence bar = gesture confirmed</div>
           </div>
-          <div className="capability-grid">
-            
-            <div className="cap-card guide-card-animated" style={{ animationDelay: "0.1s" }}>
-              <div className="gest-icon" style={{ fontSize: "28px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                ☝️
-              </div>
-              <span className="tag">GESTURE</span>
-              <h3>1 Finger</h3>
-              <p>Point index finger to move cursor.</p>
-            </div>
 
-            <div className="cap-card guide-card-animated" style={{ animationDelay: "0.2s" }}>
-              <div className="gest-icon" style={{ fontSize: "28px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                🤏
-              </div>
-              <span className="tag">GESTURE</span>
-              <h3>Pinch</h3>
-              <p>Thumb + index to click or draw.</p>
-            </div>
+          {/* Navigation */}
+          <div className="gesture-category-label" style={{ animationDelay: "0.15s" }}>Navigation</div>
 
-            <div className="cap-card guide-card-animated" style={{ animationDelay: "0.3s" }}>
-              <div className="gest-icon" style={{ fontSize: "28px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                🖐️
-              </div>
-              <span className="tag">GESTURE</span>
-              <h3>Open Palm</h3>
-              <p>Hold for 0.8s to jump home.</p>
+          <div className="gesture-list-item" style={{ animationDelay: "0.18s" }}>
+            <div className="gesture-emoji">🖐️</div>
+            <div className="gesture-info">
+              <div className="gesture-name">Open Palm</div>
+              <div className="gesture-desc">All 4+ fingers extended &mdash; navigates to the Home dashboard</div>
             </div>
-
-            <div className="cap-card guide-card-animated" style={{ animationDelay: "0.4s" }}>
-              <div className="gest-icon" style={{ fontSize: "28px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                ✌️
-              </div>
-              <span className="tag">GESTURE</span>
-              <h3>Peace Sign</h3>
-              <p>Hold for 0.8s for next module.</p>
-            </div>
-
+            <span className="gesture-badge badge-hold">HOLD</span>
           </div>
+
+          <div className="gesture-list-item" style={{ animationDelay: "0.22s" }}>
+            <div className="gesture-emoji">✌️</div>
+            <div className="gesture-info">
+              <div className="gesture-name">Peace Sign</div>
+              <div className="gesture-desc">Index + middle extended &mdash; cycles to the next module</div>
+            </div>
+            <span className="gesture-badge badge-hold">HOLD</span>
+          </div>
+
+          <div className="gesture-list-item" style={{ animationDelay: "0.26s" }}>
+            <div className="gesture-emoji">👊</div>
+            <div className="gesture-info">
+              <div className="gesture-name">Fist Left</div>
+              <div className="gesture-desc">Closed fist + fast left motion &mdash; browser back / previous page</div>
+            </div>
+            <span className="gesture-badge badge-swipe">SWIPE</span>
+          </div>
+
+          <div className="gesture-list-item" style={{ animationDelay: "0.30s" }}>
+            <div className="gesture-emoji">👊</div>
+            <div className="gesture-info">
+              <div className="gesture-name">Fist Right</div>
+              <div className="gesture-desc">Closed fist + fast right motion &mdash; browser forward / next page</div>
+            </div>
+            <span className="gesture-badge badge-swipe">SWIPE</span>
+          </div>
+
+          {/* Click & Interaction */}
+          <div className="gesture-category-label" style={{ animationDelay: "0.34s", marginTop: "16px" }}>Click &amp; Interaction</div>
+
+          <div className="gesture-list-item" style={{ animationDelay: "0.37s" }}>
+            <div className="gesture-emoji">🤏</div>
+            <div className="gesture-info">
+              <div className="gesture-name">Pinch</div>
+              <div className="gesture-desc">Thumb + index tip close &mdash; single click on element under cursor</div>
+            </div>
+            <span className="gesture-badge badge-pinch">CLICK</span>
+          </div>
+
+          <div className="gesture-list-item" style={{ animationDelay: "0.41s" }}>
+            <div className="gesture-emoji">🤏</div>
+            <div className="gesture-info">
+              <div className="gesture-name">Double Pinch</div>
+              <div className="gesture-desc">Two quick pinches under 400ms &mdash; double-click on element</div>
+            </div>
+            <span className="gesture-badge badge-double">DOUBLE</span>
+          </div>
+
+          <div className="gesture-list-item" style={{ animationDelay: "0.45s" }}>
+            <div className="gesture-emoji">⏱️</div>
+            <div className="gesture-info">
+              <div className="gesture-name">Long Press</div>
+              <div className="gesture-desc">Hold pinch 1.5s without moving &mdash; triggers context menu</div>
+            </div>
+            <span className="gesture-badge badge-hold">HOLD</span>
+          </div>
+
+          <div className="gesture-list-item" style={{ animationDelay: "0.49s" }}>
+            <div className="gesture-emoji">✋</div>
+            <div className="gesture-info">
+              <div className="gesture-name">Drag &amp; Drop</div>
+              <div className="gesture-desc">Pinch + hold 350ms then move &mdash; release pinch to drop</div>
+            </div>
+            <span className="gesture-badge badge-drag">DRAG</span>
+          </div>
+
+          <div className="gesture-list-item" style={{ animationDelay: "0.53s" }}>
+            <div className="gesture-emoji">☝️</div>
+            <div className="gesture-info">
+              <div className="gesture-name">Point &amp; Hover</div>
+              <div className="gesture-desc">Index finger only &mdash; moves cursor, dwell over element to hover</div>
+            </div>
+            <span className="gesture-badge badge-dwell">DWELL</span>
+          </div>
+
+          {/* Scroll & Zoom */}
+          <div className="gesture-category-label" style={{ animationDelay: "0.57s", marginTop: "16px" }}>Scroll &amp; Zoom</div>
+
+          <div className="gesture-list-item" style={{ animationDelay: "0.60s" }}>
+            <div className="gesture-emoji">✊</div>
+            <div className="gesture-info">
+              <div className="gesture-name">Fist Scroll</div>
+              <div className="gesture-desc">Closed fist + slow vertical movement &mdash; smooth page scroll</div>
+            </div>
+            <span className="gesture-badge badge-move">MOVE</span>
+          </div>
+
+          <div className="gesture-list-item" style={{ animationDelay: "0.64s" }}>
+            <div className="gesture-emoji">☝️</div>
+            <div className="gesture-info">
+              <div className="gesture-name">Swipe Up</div>
+              <div className="gesture-desc">Point + fast upward motion &mdash; scroll up or previous music track</div>
+            </div>
+            <span className="gesture-badge badge-swipe">SWIPE</span>
+          </div>
+
+          <div className="gesture-list-item" style={{ animationDelay: "0.68s" }}>
+            <div className="gesture-emoji">☝️</div>
+            <div className="gesture-info">
+              <div className="gesture-name">Swipe Down</div>
+              <div className="gesture-desc">Point + fast downward motion &mdash; scroll down or next music track</div>
+            </div>
+            <span className="gesture-badge badge-swipe">SWIPE</span>
+          </div>
+
+          <div className="gesture-list-item" style={{ animationDelay: "0.72s" }}>
+            <div className="gesture-emoji">👍</div>
+            <div className="gesture-info">
+              <div className="gesture-name">Thumbs Up</div>
+              <div className="gesture-desc">Thumb pointing up, others closed &mdash; zoom in (up to 2x)</div>
+            </div>
+            <span className="gesture-badge badge-zoom">ZOOM IN</span>
+          </div>
+
+          <div className="gesture-list-item" style={{ animationDelay: "0.76s" }}>
+            <div className="gesture-emoji">👎</div>
+            <div className="gesture-info">
+              <div className="gesture-name">Thumbs Down</div>
+              <div className="gesture-desc">Thumb pointing down, others closed &mdash; zoom out (down to 0.5x)</div>
+            </div>
+            <span className="gesture-badge badge-zoom">ZOOM OUT</span>
+          </div>
+
+          {/* Shortcuts */}
+          <div className="gesture-category-label" style={{ animationDelay: "0.80s", marginTop: "16px" }}>Shortcuts</div>
+
+          <div className="gesture-list-item" style={{ animationDelay: "0.83s" }}>
+            <div className="gesture-emoji">🤟</div>
+            <div className="gesture-info">
+              <div className="gesture-name">Three Fingers</div>
+              <div className="gesture-desc">Index + middle + ring extended &mdash; opens JARVIS AI chat panel</div>
+            </div>
+            <span className="gesture-badge badge-chat">CHAT</span>
+          </div>
+
+          {/* Sensitivity tip */}
+          <div style={{ background: "rgba(178,58,72,0.06)", border: "1px solid rgba(178,58,72,0.18)", borderRadius: "12px", padding: "16px 20px", marginTop: "24px", opacity: 0, animation: "fadeInUp 0.5s ease 0.9s forwards" }}>
+            <div style={{ fontSize: "10px", textTransform: "uppercase", letterSpacing: "2px", color: "var(--red)", marginBottom: "8px" }}>Sensitivity Slider Controls 6 Parameters</div>
+            <div style={{ fontSize: "12px", color: "rgba(254,208,187,0.6)", lineHeight: "1.7" }}>
+              Pinch threshold &bull; EMA smoothing &bull; Confirmation frames &bull; Swipe velocity &bull; Scroll speed &bull; Hover dwell time.
+              <br/><span style={{ color: "rgba(254,208,187,0.4)" }}>Low = deliberate &nbsp;&bull;&nbsp; High = fast &amp; reactive</span>
+            </div>
+          </div>
+
         </div>
 
 
